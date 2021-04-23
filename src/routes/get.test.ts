@@ -1,11 +1,9 @@
-import { makeApp } from './server'
 import request from 'supertest'
-import { dbTest } from './test_common'
+import { appTest } from '../test_common'
 
-describe(`makeApp`, () => {
+describe(`get route`, () => {
 	it.concurrent(`redirects on an existing record`, () =>
-		dbTest(async (db) => {
-			const app = await makeApp(db)
+		appTest(async ({ app, db }) => {
 			await db.query(
 				`INSERT INTO urls (short, original) VALUES ('test', 'http://google.com')`
 			)
@@ -15,9 +13,7 @@ describe(`makeApp`, () => {
 	)
 
 	it.concurrent(`returns 404 for an absent record`, () =>
-		dbTest(async (db) => {
-			const app = await makeApp(db)
-
+		appTest(async ({ app }) => {
 			await request(app).get('/test').expect(404)
 		})
 	)

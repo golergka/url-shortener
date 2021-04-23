@@ -1,4 +1,4 @@
-import { makeApp } from './server'
+import { makeApp } from './app'
 
 const { PORT: port } = process.env
 

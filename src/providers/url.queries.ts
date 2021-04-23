@@ -1,35 +1,35 @@
 /** Types generated for queries found in "src/providers/url.sql" */
 import { PreparedQuery } from '@pgtyped/query'
 
-/** 'GetOriginal' parameters type */
-export interface IGetOriginalParams {
+/** 'GetOriginalUrl' parameters type */
+export interface IGetOriginalUrlParams {
 	short: string | null | void
 }
 
-/** 'GetOriginal' return type */
-export interface IGetOriginalResult {
+/** 'GetOriginalUrl' return type */
+export interface IGetOriginalUrlResult {
 	original: string
 }
 
-/** 'GetOriginal' query type */
-export interface IGetOriginalQuery {
-	params: IGetOriginalParams
-	result: IGetOriginalResult
+/** 'GetOriginalUrl' query type */
+export interface IGetOriginalUrlQuery {
+	params: IGetOriginalUrlParams
+	result: IGetOriginalUrlResult
 }
 
-const getOriginalIR: any = {
-	name: 'getOriginal',
+const getOriginalUrlIR: any = {
+	name: 'getOriginalUrl',
 	params: [
 		{
 			name: 'short',
 			transform: { type: 'scalar' },
-			codeRefs: { used: [{ a: 65, b: 69, line: 4, col: 15 }] }
+			codeRefs: { used: [{ a: 68, b: 72, line: 4, col: 15 }] }
 		}
 	],
 	usedParamSet: { short: true },
 	statement: {
 		body: 'SELECT original\nFROM urls\nWHERE short = :short',
-		loc: { a: 24, b: 69, line: 2, col: 0 }
+		loc: { a: 27, b: 72, line: 2, col: 0 }
 	}
 }
 
@@ -41,7 +41,60 @@ const getOriginalIR: any = {
  * WHERE short = :short
  * ```
  */
-export const getOriginal = new PreparedQuery<
-	IGetOriginalParams,
-	IGetOriginalResult
->(getOriginalIR)
+export const getOriginalUrl = new PreparedQuery<
+	IGetOriginalUrlParams,
+	IGetOriginalUrlResult
+>(getOriginalUrlIR)
+
+/** 'TryStoreUrl' parameters type */
+export interface ITryStoreUrlParams {
+	short: string | null | void
+	original: string | null | void
+}
+
+/** 'TryStoreUrl' return type */
+export interface ITryStoreUrlResult {
+	original: string
+}
+
+/** 'TryStoreUrl' query type */
+export interface ITryStoreUrlQuery {
+	params: ITryStoreUrlParams
+	result: ITryStoreUrlResult
+}
+
+const tryStoreUrlIR: any = {
+	name: 'tryStoreUrl',
+	params: [
+		{
+			name: 'short',
+			transform: { type: 'scalar' },
+			codeRefs: { used: [{ a: 144, b: 148, line: 8, col: 9 }] }
+		},
+		{
+			name: 'original',
+			transform: { type: 'scalar' },
+			codeRefs: { used: [{ a: 152, b: 159, line: 8, col: 17 }] }
+		}
+	],
+	usedParamSet: { short: true, original: true },
+	statement: {
+		body:
+			'INSERT INTO urls (short, original)\nVALUES (:short, :original)\nON CONFLICT DO NOTHING\nRETURNING original',
+		loc: { a: 100, b: 202, line: 7, col: 0 }
+	}
+}
+
+/**
+ * Query generated from SQL:
+ * ```
+ * INSERT INTO urls (short, original)
+ * VALUES (:short, :original)
+ * ON CONFLICT DO NOTHING
+ * RETURNING original
+ * ```
+ */
+export const tryStoreUrl = new PreparedQuery<
+	ITryStoreUrlParams,
+	ITryStoreUrlResult
+>(tryStoreUrlIR)
