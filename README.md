@@ -92,3 +92,9 @@ This is my boilerplate. There are many like it, but this one is mine.
 * **pgtyped** — I dislike ORMs, but I like type safety and checking my code at compilation time instead of run rime. This library allows me to pre-compile my SQL queries against a development database, check them for errors and save type information in my proejct.
 * **postgres-migrations** — miminalistic migrations library that have never let me down. Not having down migrations does make development a bit harder, but I still think it's a good decision overall.
 * **pg-tx** - minimalistic node-pg transaction wrapper that I wrote. However, I only use transactions for integration tests.
+
+## Architecture
+
+Project is split into routes and providers. Usually web services split routes (or controllers) and services; however, since this is such a small codebase, it didn't make much sense. However, splitting single url provider seemed like a good decision, as it should handle both Redis and Postgres layer.
+
+Since I want app to be integration tested with cancelled transactions, I want to inject database client instance into all routes. But since there aren't many routes and dependencies, I decided not to use any DI frameworks and just use simple factory functions taking parameters instead.

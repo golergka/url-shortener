@@ -1,9 +1,16 @@
 {
-  "transforms": [{
-    "mode": "ts",
-    "include": "**/*.ts",
-    "emitTemplate": "{{dir}}/{{name}}.types.ts"
-  }],
+  "transforms": [
+    {
+      "mode": "ts",
+      "include": "**/*.ts",
+      "emitTemplate": "{{dir}}/{{name}}.types.ts"
+    },
+    {
+      "mode": "sql",
+      "include": "**/*.sql",
+      "emitTemplate": "{{dir}}/{{name}}.queries.ts"
+    }
+  ],
   "srcDir": "./src/",
   "failOnError": true,
   "camelCaseColumnNames": true
