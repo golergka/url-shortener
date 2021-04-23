@@ -1,4 +1,4 @@
-/** Types generated for queries found in "src/index.ts" */
+/** Types generated for queries found in "src/server.ts" */
 
 /** 'GetOriginalUrl' parameters type */
 export interface IGetOriginalUrlParams {

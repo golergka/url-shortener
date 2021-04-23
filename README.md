@@ -81,8 +81,14 @@ This is my boilerplate. There are many like it, but this one is mine.
 * **Source map support** — so that my stacktraces show my Typescript traces
 * **env-cmd** — so I can use project-specifig .env files
 
+### HTTP API server
+
+* **Express** - standard router and server. It's industry standart, but I'm a bit unhappy with it's liberal use of `any` and should probably find a better alternative one of those days.
+* **Supertest** — to build tests on express
+
 ### Postgres
 
 * **pg** — the standard node-postgres driver
 * **pgtyped** — I dislike ORMs, but I like type safety and checking my code at compilation time instead of run rime. This library allows me to pre-compile my SQL queries against a development database, check them for errors and save type information in my proejct.
 * **postgres-migrations** — miminalistic migrations library that have never let me down. Not having down migrations does make development a bit harder, but I still think it's a good decision overall.
+* **pg-tx** - minimalistic node-pg transaction wrapper that I wrote. However, I only use transactions for integration tests.
