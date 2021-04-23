@@ -1,0 +1,10 @@
+{
+  "transforms": [{
+    "mode": "ts",
+    "include": "**/*.ts",
+    "emitTemplate": "{{dir}}/{{name}}.types.ts"
+  }],
+  "srcDir": "./src/",
+  "failOnError": true,
+  "camelCaseColumnNames": true
+}
