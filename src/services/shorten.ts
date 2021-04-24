@@ -13,7 +13,7 @@ export class ShortenService {
 		private readonly hashFunction: HashFunction
 	) {}
 
-	public async shorten(url: string, storeAuth?: boolean) {
+	public async shorten(url: string, storeAuth?: boolean): Promise<ShortenResult> {
 		let normalizedUrl
 		try {
 			normalizedUrl = normalizeUrl(url, {

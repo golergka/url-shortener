@@ -1,5 +1,6 @@
 import request from 'supertest'
 import { makeApp } from '../app'
+import { makeHashFunction } from '../hash_function'
 import { appTest, dbTest } from '../test_common'
 
 describe(`shorten route`, () => {
@@ -27,7 +28,7 @@ describe(`shorten route`, () => {
 			const app = await makeApp({
 				db,
 				hashFunction: function* (_) {
-					/* empty */
+					// empty
 				}
 			})
 
@@ -87,5 +88,28 @@ describe(`shorten route`, () => {
 					})
 					.expect(200)
 			})
+	)
+
+	it.concurrent(`retrieves a stored url even when hash funciton changes`, () =>
+		dbTest(async (db) => {
+			const app1 = await makeApp({
+				db,
+				hashFunction: makeHashFunction('sha1', 'base64', 12)
+			})
+
+			const {
+				body: { short }
+			} = await request(app1)
+				.post('/shorten')
+				.send({ url: 'http://google.com' })
+				.expect(200)
+
+			const app2 = await makeApp({
+				db,
+				hashFunction: makeHashFunction('md5', 'base64', 12)
+			})
+
+			await request(app2).get(`/${short}`).expect(308)
+		})
 	)
 })
