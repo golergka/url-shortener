@@ -1,30 +1,36 @@
 import { Router } from 'express'
-import { HashFunction } from '../hash_function'
-import { UrlProvider } from '../providers/url'
+import { ShortenService } from '../services/shorten'
 
-export = (urlProvider: UrlProvider, hashFunction: HashFunction): Router => {
+export = (shortenService: ShortenService): Router => {
 	const router = Router()
 
 	router.post('/', async (req, res, next) => {
-		const { url } = req.body
-
-		const generator = hashFunction(url)
-		let tryResult
-		let short
-		do {
-			const genNext = generator.next()
-			if (genNext.done) {
-				// Throwing erros is not supported until Express 5?...
-				next(new Error(`hash function out of values`))
-				return
-			} else {
-				short = genNext.value
-				// eslint-disable-next-line no-await-in-loop
-				tryResult = await urlProvider.tryStoreUrl(short, url)
+		try {
+			const shortenResult = await shortenService.shorten(
+				req.body.url,
+				req.body.storeAuth
+			)
+			switch (shortenResult.result) {
+				case 'success':
+					res.status(200).send({
+						short: shortenResult.short,
+						original: shortenResult.original
+					})
+					break
+				case 'invalid_url':
+					res.status(400).send({
+						error: 'Invalid URL'
+					})
+					break
+				case 'auth_leaked':
+					res.status(400).send({
+						error: `Authentication information leaked - use storeAuth:true if it's intended`
+					})
 			}
-		} while (!tryResult)
-
-		res.status(200).send({ short })
+		} catch (e) {
+			// Throwing erros is not supported until Express 5?...
+			next(e)
+		}
 	})
 
 	return router
