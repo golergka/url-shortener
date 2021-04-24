@@ -20,4 +20,20 @@ describe(`shorten route`, () => {
 			expect(res.body.short).toBe('https://google.com')
 		})
 	)
+
+	it.concurrent(`returns 500 when hash function is out of values`, () =>
+		dbTest(async (db) => {
+			const app = await makeApp({
+				db,
+				hashFunction: function* (_) {
+					/* empty */
+				}
+			})
+
+			await request(app)
+				.post('/shorten')
+				.send({ url: 'https://google.com' })
+				.expect(500)
+		})
+	)
 })

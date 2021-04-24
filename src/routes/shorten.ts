@@ -5,18 +5,20 @@ import { UrlProvider } from '../providers/url'
 export = (urlProvider: UrlProvider, hashFunction: HashFunction): Router => {
 	const router = Router()
 
-	router.post('/', async (req, res) => {
+	router.post('/', async (req, res, next) => {
 		const { url } = req.body
 
 		const generator = hashFunction(url)
 		let tryResult
 		let short
 		do {
-			const next = generator.next()
-			if (next.done) {
-				throw new Error(`hash function out of values`)
+			const genNext = generator.next()
+			if (genNext.done) {
+				// Throwing erros is not supported until Express 5?...
+				next(new Error(`hash function out of values`))
+				return
 			} else {
-				short = next.value
+				short = genNext.value
 				// eslint-disable-next-line no-await-in-loop
 				tryResult = await urlProvider.tryStoreUrl(short, url)
 			}
