@@ -30,7 +30,7 @@ export async function makeApp(
 	app.use(express.json())
 
 	app.use('/', getRouter(urlProvider))
-	app.use('/shorten', shortenRouter(shortenService))
+	app.use('/api/v1/shorten', shortenRouter(shortenService))
 
 	return app
 }

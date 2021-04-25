@@ -3,7 +3,7 @@ import { makeApp } from '../app'
 import { makeHashFunction } from '../hash_function'
 import { appTest, dbTest } from '../test_common'
 
-describe(`shorten route`, () => {
+describe(`api/v1/shorten route`, () => {
 	it.concurrent(`stores a basic url`, () =>
 		dbTest(async (db) => {
 			const app = await makeApp({
@@ -14,7 +14,7 @@ describe(`shorten route`, () => {
 			})
 
 			const res = await request(app)
-				.post('/shorten')
+				.post('/api/v1/shorten')
 				.send({ url: 'https://google.com' })
 				.expect(200)
 
@@ -33,7 +33,7 @@ describe(`shorten route`, () => {
 			})
 
 			await request(app)
-				.post('/shorten')
+				.post('/api/v1/shorten')
 				.send({ url: 'https://google.com' })
 				.expect(500)
 		})
@@ -42,7 +42,7 @@ describe(`shorten route`, () => {
 	it.concurrent(`returns 400 when user provides an invalid url`, () =>
 		appTest(async ({ app }) => {
 			const res = await request(app)
-				.post('/shorten')
+				.post('/api/v1/shorten')
 				.send({ url: 'invalid url' })
 				.expect(400)
 
@@ -53,7 +53,7 @@ describe(`shorten route`, () => {
 	it.concurrent(`completes a user provided url with schema prefix`, () =>
 		appTest(async ({ app }) => {
 			const res = await request(app)
-				.post('/shorten')
+				.post('/api/v1/shorten')
 				.send({ url: 'google.com' })
 				.expect(200)
 
@@ -66,7 +66,7 @@ describe(`shorten route`, () => {
 		() =>
 			appTest(async ({ app }) => {
 				const res = await request(app)
-					.post('/shorten')
+					.post('/api/v1/shorten')
 					.send({ url: 'http://user:password@domain.com' })
 					.expect(400)
 
@@ -81,7 +81,7 @@ describe(`shorten route`, () => {
 		() =>
 			appTest(async ({ app }) => {
 				await request(app)
-					.post('/shorten')
+					.post('/api/v1/shorten')
 					.send({
 						url: 'http://user:password@domain.com',
 						storeAuth: true
@@ -100,7 +100,7 @@ describe(`shorten route`, () => {
 			const {
 				body: { short }
 			} = await request(app1)
-				.post('/shorten')
+				.post('/api/v1/shorten')
 				.send({ url: 'http://google.com' })
 				.expect(200)
 
