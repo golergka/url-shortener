@@ -17,11 +17,14 @@
 ### Non-functional improvements
 
 * [ ] Caching (Redis)
+* [ ] Health checks
 * [ ] Error reporting (Sentry)
 * [ ] Containerize (Docker)
-* [ ] Cluster (Kubernetes)
-* [ ] Monitoring (Prometeus+Grafana ?)
+* [ ] REST API documentation (Swagger?)
+* [ ] Automatic horizontal scaling (Kubernetes or just AWS EBS?)
+* [ ] Monitoring (Prometeus + Grafana?)
 * [ ] Logs collection (AWS Cloudwatchs / ELK)
+* [ ] Rate limiting (probably on Nginx/CDN, not in the app)
 
 ### Functional improvements
 
@@ -94,11 +97,11 @@ This is my boilerplate. There are many like it, but this one is mine.
 * **postgres-migrations** — miminalistic migrations library that have never let me down. Not having down migrations does make development a bit harder, but I still think it's a good decision overall.
 * **pg-tx** - minimalistic node-pg transaction wrapper that I wrote. However, I only use transactions for integration tests.
 
-### Logic
+### Logic etc
 
 * **normalize-url** - helps handling client-provided URLs that may be incomplete
 
-## Architecture
+# Architecture
 
 Project is split into routes, providers and services. Providers are responsible for storage (Postgresql and Redis), routes for interacting with user, and services for business logic.
 
