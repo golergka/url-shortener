@@ -12,7 +12,11 @@ export = (urlProvider: UrlProvider): Router => {
 		} else {
 			// Reason for 308 code
 			// https://stackoverflow.com/a/42138726/312725
-			res.redirect(308, url)
+
+			res.set('Location', url)
+			res.set('Content-Type', 'text/html')
+			res.status(308)
+			res.render('redirect', { url })
 		}
 	})
 

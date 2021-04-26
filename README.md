@@ -9,7 +9,7 @@
   * [x] Check that URLs don't have user and password information by accident
 * [ ] Redirect from short URL to original URL
   * [x] Return a basic redirect
-  * [ ] Redirect with HTML that contains a simple text message
+  * [x] Redirect with HTML that contains a simple text message
   * [x] Return 404 status when failed to find code
   * [ ] Provide a detailed 404 page
 * [x] Web app
