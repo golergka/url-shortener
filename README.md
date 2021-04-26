@@ -17,7 +17,7 @@
   * [x] Error page for auth leaked error
   * [ ] CSS styling
   * [ ] favicon
-  * [ ] Internal error 500 page
+  * [x] Internal error 500 page
 
 ### Non-functional improvements
 
