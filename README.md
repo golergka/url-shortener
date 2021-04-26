@@ -1,5 +1,7 @@
 # URL-shortener
 
+This is a toy url shortener — a web application that creates short URL's from long ones.
+
 ## Tasks
 
 ### Baseline
@@ -16,7 +18,6 @@
   * [x] Error page for invalid URL
   * [x] Error page for auth leaked error
   * [x] CSS styling
-  * [ ] favicon
   * [x] Internal error 500 page
 
 ### Non-functional improvements
@@ -43,6 +44,14 @@
 
 ## Running the project
 
+To start the project:
+
+1. Make sure you have local Node and NPM. This project uses Node 14
+2. Launch Postgresql database
+3. Provide Postgresql connection details and other parameters in environment variables (see below)
+4. Run `npm i`, `npm build` and `npm start`
+5. Now the HTTP server is up and running on host and port you specified
+
 ### Scripts
 
 * **build** — builds all the javascript files
@@ -55,7 +64,7 @@
 
 Typical workflow when updating something with database would be first to edit migrations in `migrations` folder and queries in your code, and then run `migrate`, `typegen` and `lint:fix` scripts.
 
-### .env file
+### Required environment variables
 
 To run various scripts locally, you should defined environment variables. However, because this project uses `env-cmd`, you can create a local `.env` file (ignored by git) instead. Here's what it should look like:
 
@@ -113,7 +122,7 @@ This is my boilerplate. There are many like it, but this one is mine.
 * **pug** - templating engine
 * **Bulma** — very simple CSS framework so my web pages look just a little bit more sofisticated than c2.com
 
-# Architecture
+## Architecture
 
 Project is split into routes, providers and services. Providers are responsible for storage (Postgresql and Redis), routes for interacting with user, and services for business logic.
 

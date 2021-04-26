@@ -66,15 +66,30 @@ describe(`api/v1/shorten route`, () => {
 		})
 	)
 
-	it.concurrent(`returns 400 when user provides an invalid url`, () =>
-		appTest(async ({ app }) => {
-			const res = await request(app)
-				.post('/api/v1/shorten')
-				.send({ url: 'invalid url' })
-				.expect(400)
+	it.concurrent(
+		`returns 400 when user provides an invalid url with spaces`,
+		() =>
+			appTest(async ({ app }) => {
+				const res = await request(app)
+					.post('/api/v1/shorten')
+					.send({ url: 'invalid url' })
+					.expect(400)
 
-			expect(res.body.error).toBe('Invalid URL')
-		})
+				expect(res.body.error).toBe('Invalid URL')
+			})
+	)
+
+	it.concurrent(
+		`returns 400 when user provides an invalid url without top level domain`,
+		() =>
+			appTest(async ({ app }) => {
+				const res = await request(app)
+					.post('/api/v1/shorten')
+					.send({ url: 'localhost' })
+					.expect(400)
+
+				expect(res.body.error).toBe('Invalid URL')
+			})
 	)
 
 	it.concurrent(`completes a user provided url with schema prefix`, () =>

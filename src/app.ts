@@ -28,7 +28,7 @@ export async function makeApp(
 		urlProvider,
 		hashFunction,
 		params.hostname,
-		['/api']
+		['/api', '/static']
 	)
 
 	const app: express.Application = express()

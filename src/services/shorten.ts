@@ -46,6 +46,9 @@ export class ShortenService {
 				})
 				return { result: 'auth_leaked', fixedUrl }
 			}
+			if (parsedUrl.hostname.split('.').length < 2) {
+				return { result: 'invalid_url' }
+			}
 		} catch (_) {
 			return { result: 'invalid_url' }
 		}
