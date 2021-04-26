@@ -1,7 +1,7 @@
 import request from 'supertest'
 import { appTest } from '../test_common'
 
-describe(`get route`, () => {
+describe(`redirect route`, () => {
 	it.concurrent(`redirects on an existing record`, () =>
 		appTest(async ({ app, db }) => {
 			await db.query(

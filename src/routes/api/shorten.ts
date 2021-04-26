@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { ShortenService } from '../services/shorten'
+import { ShortenService } from '../../services/shorten'
 
 export = (shortenService: ShortenService): Router => {
 	const router = Router()
@@ -12,10 +12,10 @@ export = (shortenService: ShortenService): Router => {
 			)
 			switch (shortenResult.result) {
 				case 'success':
-					res.status(200).send({
-						short: shortenResult.short,
-						original: shortenResult.original
-					})
+					{
+						const { short, original } = shortenResult
+						res.status(200).send({ short, original })
+					}
 					break
 				case 'invalid_url':
 					res.status(400).send({

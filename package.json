@@ -2,9 +2,9 @@
   "name": "url-shortener",
   "version": "1.0.0",
   "description": "A toy project implementing a common URL shortener service",
-  "main": ".build/index.js",
+  "main": ".build/server.js",
   "scripts": {
-    "start": "env-cmd --silent node --unhandled-rejections=strict -r source-map-support/register .build/index.js",
+    "start": "env-cmd --silent node --unhandled-rejections=strict -r source-map-support/register .build/server.js",
     "migrate": "env-cmd --silent node --unhandled-rejections=strict scripts/migrate.mjs",
     "build": "tsc",
     "lint": "eslint . --ext .ts",

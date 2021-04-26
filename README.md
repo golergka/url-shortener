@@ -12,7 +12,12 @@
   * [ ] Redirect with HTML that contains a simple text message
   * [x] Return 404 status when failed to find code
   * [ ] Provide a detailed 404 page
-* [ ] Web app
+* [x] Web app
+  * [ ] Error page for invalid URL
+  * [ ] Error page for auth leaked error
+  * [ ] CSS styling
+  * [ ] favicon
+  * [ ] General-purpose 404 page
 
 ### Non-functional improvements
 
@@ -23,11 +28,13 @@
 * [ ] REST API documentation (Swagger?)
 * [ ] Automatic horizontal scaling (Kubernetes or just AWS EBS?)
 * [ ] Monitoring (Prometeus + Grafana?)
+* [ ] Write diagnostic logs
 * [ ] Logs collection (AWS Cloudwatchs / ELK)
 * [ ] Rate limiting (probably on Nginx/CDN, not in the app)
 
 ### Functional improvements
 
+* [ ] Client-side URL validation
 * [ ] Custom short URL
 * [ ] Multiple domains
 * [ ] User login/registration - separate service and db?
@@ -42,7 +49,7 @@
 * **start** — runs the javascript files
 * **lint** — highlights all the lint errors
 * **lint:fix** — as above, but also fixes everything that it can automatically
-* **test** — runs all the tests
+* **test** — runs all the tests. *Please remember that tests rely on Postgresql database.*
 * **typegen** — checks all the SQL queries and generates types for them
 * **migrate** — runs all pending migrations
 
@@ -59,6 +66,9 @@ PGPASSWORD=password
 PGDATABASE=url-shortener
 PGPORT=5432
 PORT=8080
+
+PORT=80
+HOSTNAME=http://localhost:80
 ```
 
 ## Libraries used
@@ -105,5 +115,7 @@ This is my boilerplate. There are many like it, but this one is mine.
 # Architecture
 
 Project is split into routes, providers and services. Providers are responsible for storage (Postgresql and Redis), routes for interacting with user, and services for business logic.
+
+As a result, I have `shorten.ts` service, `shorten.ts` api route and `shorten.ts` www route. To be honest, it looks quite silly. I should probably medidate on how build this kind of architecture in less of an architecture-astronaut type of way.
 
 Since I want app to be integration tested with cancelled transactions, I want to inject database client instance into all routes. But since there aren't many routes and dependencies, I decided not to use any DI frameworks and just use simple class constructors instead.

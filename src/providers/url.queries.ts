@@ -53,9 +53,7 @@ export interface ITryStoreUrlParams {
 }
 
 /** 'TryStoreUrl' return type */
-export interface ITryStoreUrlResult {
-	original: string
-}
+export type ITryStoreUrlResult = void
 
 /** 'TryStoreUrl' query type */
 export interface ITryStoreUrlQuery {
@@ -80,8 +78,8 @@ const tryStoreUrlIR: any = {
 	usedParamSet: { short: true, original: true },
 	statement: {
 		body:
-			'INSERT INTO urls (short, original)\nVALUES (:short, :original)\nON CONFLICT DO NOTHING\nRETURNING original',
-		loc: { a: 100, b: 202, line: 7, col: 0 }
+			'INSERT INTO urls (short, original)\nVALUES (:short, :original)\nON CONFLICT DO NOTHING',
+		loc: { a: 100, b: 183, line: 7, col: 0 }
 	}
 }
 
@@ -91,7 +89,6 @@ const tryStoreUrlIR: any = {
  * INSERT INTO urls (short, original)
  * VALUES (:short, :original)
  * ON CONFLICT DO NOTHING
- * RETURNING original
  * ```
  */
 export const tryStoreUrl = new PreparedQuery<

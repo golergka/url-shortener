@@ -1,5 +1,9 @@
-html 
-  head 
-    title= 'URL shortener'
-  body
-    h1= 'hi'
+extends layout
+
+block content
+  h1= 'hi'
+  form(action='/shorten', method='POST')
+    p
+      | url: 
+      input(type='test', name='url', value='')
+    input(type='submit', value='Submit')

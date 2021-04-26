@@ -6,5 +6,4 @@ WHERE short = :short;
 /* @name tryStoreUrl */
 INSERT INTO urls (short, original)
 VALUES (:short, :original)
-ON CONFLICT DO NOTHING
-RETURNING original;
+ON CONFLICT DO NOTHING;

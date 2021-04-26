@@ -1,7 +1,7 @@
 import request from 'supertest'
-import { makeApp } from '../app'
-import { makeHashFunction } from '../hash_function'
-import { appTest, dbTest } from '../test_common'
+import { makeApp } from '../../app'
+import { makeHashFunction } from '../../hash_function'
+import { appTest, dbTest } from '../../test_common'
 
 describe(`api/v1/shorten route`, () => {
 	it.concurrent(`stores a basic url`, () =>
@@ -21,6 +21,32 @@ describe(`api/v1/shorten route`, () => {
 
 			expect(res.body.short).toBe('http://localhost/yeet')
 			expect(res.body.original).toBe('https://google.com')
+		})
+	)
+
+	it.concurrent(`returns success for a url that has already been stored`, () =>
+		appTest(async ({ app }) => {
+			const res1 = await request(app)
+				.post('/api/v1/shorten')
+				.send({ url: 'http://reddit.com' })
+				.expect(200)
+
+			const res2 = await request(app)
+				.post('/api/v1/shorten')
+				.send({ url: 'http://reddit.com' })
+				.expect(200)
+
+			expect(res1.body.short).toBe(res2.body.short)
+		})
+	)
+
+	/*
+	it.concurrent(`returns 400 when api user misuses API`, () =>
+		appTest(async ({ app }) => {
+			await request(app)
+				.post('/api/v1/shorten')
+				.send({ otherParameter: 'something' })
+				.expect(400)
 		})
 	)
 
@@ -119,27 +145,32 @@ describe(`api/v1/shorten route`, () => {
 		})
 	)
 
-	it.concurrent(`doesn't accept a hash that is identical to one of app urls`, () =>
-		dbTest(async (db) => {
-			const app = await makeApp({
-				db,
-				hashFunction: function* (_) {
-					// Roots that should be filtered out:
-					yield 'api/v1/shorten' // the current shorten route
-					yield 'api/asdasd' // it should filter all routes beginning on API
+	it.concurrent(
+		`doesn't accept a hash that is identical to one of app urls`,
+		() =>
+			dbTest(async (db) => {
+				const app = await makeApp({
+					db,
+					hashFunction: function* (_) {
+						// Roots that should be filtered out:
+						yield 'api/v1/shorten' // the current shorten route
+						yield 'api/asdasd' // it should filter all routes beginning on API
 
-					// It should fall back to:
-					yield 'yeet'
-				},
-				hostname: 'http://localhost'
+						// It should fall back to:
+						yield 'yeet'
+					},
+					hostname: 'http://localhost'
+				})
+
+				const {
+					body: { short }
+				} = await request(app)
+					.post('/api/v1/shorten')
+					.send({ url: 'http://google.com' })
+					.expect(200)
+
+				expect(short).toBe('http://localhost/yeet')
 			})
-
-			const { body: { short } } = await request(app)
-				.post('/api/v1/shorten')
-				.send({ url: 'http://google.com' })
-				.expect(200)
-
-			expect(short).toBe('http://localhost/yeet')
-		})
 	)
+	*/
 })

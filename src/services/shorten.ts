@@ -8,7 +8,6 @@ export type ShortenResult =
 	| { result: 'auth_leaked' }
 
 export class ShortenService {
-	
 	private readonly reservedURLs: string[]
 
 	constructor(
@@ -17,10 +16,15 @@ export class ShortenService {
 		private readonly hostname: string,
 		reservedPaths: string[]
 	) {
-		this.reservedURLs = reservedPaths.map(path => normalizeUrl(`${hostname}/${path}`))
+		this.reservedURLs = reservedPaths.map((path) =>
+			normalizeUrl(`${hostname}/${path}`)
+		)
 	}
 
-	public async shorten(url: string, storeAuth?: boolean): Promise<ShortenResult> {
+	public async shorten(
+		url: string,
+		storeAuth?: boolean
+	): Promise<ShortenResult> {
 		let normalizedUrl
 		try {
 			normalizedUrl = normalizeUrl(url, {
@@ -50,8 +54,9 @@ export class ShortenService {
 				hash = genNext.value
 				short = normalizeUrl(`${this.hostname}/${hash}`)
 				// eslint-disable no-await-in-loop
-				success = (this.reservedURLs.every(r => !short.includes(r)))
-					&& await this.urlProvider.tryStoreUrl(hash, normalizedUrl)
+				success =
+					this.reservedURLs.every((r) => !short.includes(r)) &&
+					(await this.urlProvider.tryStoreUrl(hash, normalizedUrl))
 				// eslint-enable no-await-in-loop
 			}
 		} while (!success)
