@@ -6,10 +6,10 @@ export = (shortenService: ShortenService): Router => {
 
 	router.post('/', async (req, res, next) => {
 		try {
-			const shortenResult = await shortenService.shorten(
-				req.body.url,
-				req.body.storeAuth
-			)
+			const {
+				body: { url, storeAuth }
+			} = req
+			const shortenResult = await shortenService.shorten(url, storeAuth)
 			switch (shortenResult.result) {
 				case 'success':
 					{
@@ -19,11 +19,14 @@ export = (shortenService: ShortenService): Router => {
 					break
 
 				case 'invalid_url':
-					res.render('invalid-url')
+					res.render('invalid_url', { url })
 					break
 
 				case 'auth_leaked':
-					res.render('auth-leaked', { url: req.body.url })
+					{
+						const { fixedUrl } = shortenResult
+						res.render('auth_leaked', { url, fixedUrl })
+					}
 					break
 			}
 		} catch (e) {

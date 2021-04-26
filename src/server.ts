@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import { Pool } from 'pg'
 import { makeApp } from './app'
 

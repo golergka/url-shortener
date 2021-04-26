@@ -5,7 +5,13 @@ import { UrlProvider } from '../providers/url'
 export type ShortenResult =
 	| { result: 'success'; short: string; original: string }
 	| { result: 'invalid_url' }
-	| { result: 'auth_leaked' }
+	| { result: 'auth_leaked'; fixedUrl: string }
+
+const normalizeOptions: normalizeUrl.Options = {
+	stripTextFragment: false,
+	stripWWW: false,
+	removeQueryParameters: []
+}
 
 export class ShortenService {
 	private readonly reservedURLs: string[]
@@ -29,14 +35,16 @@ export class ShortenService {
 		try {
 			normalizedUrl = normalizeUrl(url, {
 				stripAuthentication: false, // We will handle it later
-				stripTextFragment: false,
-				stripWWW: false,
-				removeQueryParameters: []
+				...normalizeOptions
 			})
 
 			const parsedUrl = new URL(normalizedUrl)
 			if (!storeAuth && (parsedUrl.username || parsedUrl.password)) {
-				return { result: 'auth_leaked' }
+				const fixedUrl = normalizeUrl(url, {
+					stripAuthentication: true,
+					...normalizeOptions
+				})
+				return { result: 'auth_leaked', fixedUrl }
 			}
 		} catch (_) {
 			return { result: 'invalid_url' }
@@ -53,11 +61,11 @@ export class ShortenService {
 			} else {
 				hash = genNext.value
 				short = normalizeUrl(`${this.hostname}/${hash}`)
-				// eslint-disable no-await-in-loop
+				/* eslint-disable no-await-in-loop */
 				success =
 					this.reservedURLs.every((r) => !short.includes(r)) &&
 					(await this.urlProvider.tryStoreUrl(hash, normalizedUrl))
-				// eslint-enable no-await-in-loop
+				/* eslint-enable no-await-in-loop */
 			}
 		} while (!success)
 

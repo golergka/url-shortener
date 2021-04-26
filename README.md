@@ -13,11 +13,11 @@
   * [x] Return 404 status when failed to find code
   * [ ] Provide a detailed 404 page
 * [x] Web app
-  * [ ] Error page for invalid URL
-  * [ ] Error page for auth leaked error
+  * [x] Error page for invalid URL
+  * [x] Error page for auth leaked error
   * [ ] CSS styling
   * [ ] favicon
-  * [ ] General-purpose 404 page
+  * [ ] Internal error 500 page
 
 ### Non-functional improvements
 

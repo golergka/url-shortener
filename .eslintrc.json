@@ -43,5 +43,15 @@
 		"default-case-last": "warn",
 		"no-constructor-return": "warn",
 		"jest/no-identical-title": "off"
-	}
+	},
+	"overrides": [
+		{
+			"files": [
+				"**/*.queries.ts"
+			],
+			"rules": {
+				"@typescript-eslint/no-explicit-any": "off"
+			}
+		}
+	]
 }

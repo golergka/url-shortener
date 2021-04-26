@@ -7,7 +7,6 @@ import { ShortenService } from './services/shorten'
 import redirectRouter from './routes/redirect'
 import apiRouter from './routes/api'
 import wwwRouter from './routes/www'
-import indexRouter from './routes/www/index'
 
 export interface AppParameters {
 	db: Pool | PoolClient
@@ -40,7 +39,7 @@ export async function makeApp(
 	app.use('/', wwwRouter(shortenService))
 	app.use('/api/v1', apiRouter(shortenService))
 
-	const errorHandler: ErrorRequestHandler = function (err, req, res, next) {
+	const errorHandler: ErrorRequestHandler = function (err, req, res) {
 		// set locals, only providing error in development
 		res.locals.message = err.message
 		res.locals.error = req.app.get('env') === 'development' ? err : {}
@@ -49,6 +48,7 @@ export async function makeApp(
 		res.status(err.status || 500)
 		res.render('error')
 
+		// eslint-disable-next-line no-console
 		console.error(err)
 	}
 

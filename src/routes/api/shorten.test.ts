@@ -8,7 +8,7 @@ describe(`api/v1/shorten route`, () => {
 		dbTest(async (db) => {
 			const app = await makeApp({
 				db,
-				hashFunction: function* (original) {
+				hashFunction: function* () {
 					yield 'yeet'
 				},
 				hostname: 'http://localhost'
@@ -40,7 +40,6 @@ describe(`api/v1/shorten route`, () => {
 		})
 	)
 
-	/*
 	it.concurrent(`returns 400 when api user misuses API`, () =>
 		appTest(async ({ app }) => {
 			await request(app)
@@ -54,7 +53,7 @@ describe(`api/v1/shorten route`, () => {
 		dbTest(async (db) => {
 			const app = await makeApp({
 				db,
-				hashFunction: function* (_) {
+				hashFunction: function* () {
 					// empty
 				},
 				hostname: 'http://localhost'
@@ -151,7 +150,7 @@ describe(`api/v1/shorten route`, () => {
 			dbTest(async (db) => {
 				const app = await makeApp({
 					db,
-					hashFunction: function* (_) {
+					hashFunction: function* () {
 						// Roots that should be filtered out:
 						yield 'api/v1/shorten' // the current shorten route
 						yield 'api/asdasd' // it should filter all routes beginning on API
@@ -172,5 +171,4 @@ describe(`api/v1/shorten route`, () => {
 				expect(short).toBe('http://localhost/yeet')
 			})
 	)
-	*/
 })
