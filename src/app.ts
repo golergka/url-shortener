@@ -4,6 +4,7 @@ import { migrate } from 'postgres-migrations'
 import { defaultHashFunction, HashFunction } from './hash_function'
 import { UrlProvider } from './providers/url'
 import { ShortenService } from './services/shorten'
+import Redis from 'ioredis'
 import redirectRouter from './routes/redirect'
 import apiRouter from './routes/api'
 import wwwRouter from './routes/www'
@@ -13,6 +14,7 @@ export interface AppParameters {
 	hostname: string
 	hashFunction?: HashFunction
 	debug?: boolean
+	redis?: Redis.Redis
 }
 
 export async function makeApp(
@@ -24,7 +26,7 @@ export async function makeApp(
 
 	// When there's over 10 providers and services, bring in DI framework
 
-	const urlProvider = new UrlProvider(params.db)
+	const urlProvider = new UrlProvider(params.db, params.redis)
 	const shortenService = new ShortenService(
 		urlProvider,
 		hashFunction,

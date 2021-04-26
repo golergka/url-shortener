@@ -21,7 +21,7 @@ This is a toy url shortener — a web application that creates short URL's from 
 
 ### Non-functional improvements
 
-* [ ] Caching (Redis)
+* [x] Caching (Redis)
 * [ ] Health checks
 * [ ] Error reporting (Sentry)
 * [ ] Containerize (Docker)
@@ -47,9 +47,10 @@ To start the project:
 
 1. Make sure you have local Node and NPM. This project uses Node 14
 2. Launch Postgresql database
-3. Provide Postgresql connection details and other parameters in environment variables (see below)
-4. Run `npm i`, `npm build` and `npm start`
-5. Now the HTTP server is up and running on host and port you specified
+3. *(optional)* Launch Redis
+4. Provide Postgresql connection details and other parameters in environment variables (see below)
+5. Run `npm i`, `npm build` and `npm start`
+6. Now the HTTP server is up and running on host and port you specified
 
 ### Scripts
 
@@ -68,6 +69,8 @@ Typical workflow when updating something with database would be first to edit mi
 To run various scripts locally, you should defined environment variables. However, because this project uses `env-cmd`, you can create a local `.env` file (ignored by git) instead. Here's what it should look like:
 
 ```bash
+# Postgresql connection details
+# https://www.postgresql.org/docs/9.1/libpq-envars.html
 PGHOST=127.0.0.1
 PGUSER=postgres
 PGPASSWORD=password
@@ -75,8 +78,15 @@ PGDATABASE=url-shortener
 PGPORT=5432
 PORT=8080
 
+# Port and hostname of the app
 PORT=80
 HOSTNAME=http://localhost:80
+
+# Node environment - production or development
+NODE_ENV=production
+
+# Redis connection URL
+REDIS_URL="redis://127.0.0.1:6379"
 ```
 
 ## Libraries used
@@ -108,12 +118,13 @@ This is my boilerplate. There are many like it, but this one is mine.
 * **Express** - standard router and server. It's industry standart, but I'm a bit unhappy with it's liberal use of `any` and should probably find a better alternative one of those days.
 * **Supertest** — to build tests on express
 
-### Postgres
+### Database drivers
 
 * **pg** — the standard node-postgres driver
 * **pgtyped** — I dislike ORMs, but I like type safety and checking my code at compilation time instead of run rime. This library allows me to pre-compile my SQL queries against a development database, check them for errors and save type information in my proejct.
 * **postgres-migrations** — miminalistic migrations library that have never let me down. Not having down migrations does make development a bit harder, but I still think it's a good decision overall.
 * **pg-tx** - minimalistic node-pg transaction wrapper that I wrote. However, I only use transactions for integration tests.
+* **ioredis** - Redis driver
 
 ### Logic etc
 
