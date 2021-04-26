@@ -72,15 +72,18 @@ export class ShortenService {
 	/** Checks alias for correctnes and attempts to store it, or just checks */
 	private async tryStoreAlias(
 		alias: string,
+		domain: string,
 		store: false
 	): Promise<CheckStoreAliasResult>
 	private async tryStoreAlias(
 		alias: string,
+		domain: string,
 		normalizedUrl: string,
 		store: true
 	): Promise<CheckStoreAliasResult>
 	private async tryStoreAlias(
 		alias: string,
+		domain: string,
 		normalizedUrl: string | false
 	): Promise<CheckStoreAliasResult> {
 		// Alias can contain only lower case letters and digits, and be up to 20 characters
@@ -89,25 +92,29 @@ export class ShortenService {
 			return { result: 'invalid_alias', input: 'alias' }
 		}
 
+		let shortUrl: string
 		try {
-			const shortUrl = normalizeUrl(`${this.hostname}/${alias}`)
-			if (this.reservedURLs.some((r) => shortUrl.includes(r))) {
-				return { result: 'invalid_alias', input: 'alias' }
-			}
-			const storeResult = normalizedUrl
-				? await this.urlProvider.tryStoreUrl(alias, normalizedUrl)
-				: await this.urlProvider.isShortAvailable(alias)
-
-			return storeResult
-				? { result: 'success', short: shortUrl }
-				: { result: 'alias_unavaiable', input: 'alias' }
+			shortUrl = normalizeUrl(`${this.hostname}/${alias}`)
 		} catch (_) {
 			return { result: 'invalid_alias', input: 'alias' }
 		}
+
+		if (this.reservedURLs.some((r) => shortUrl.includes(r))) {
+			return { result: 'invalid_alias', input: 'alias' }
+		}
+
+		const storeResult = normalizedUrl
+			? await this.urlProvider.tryStoreUrl(alias, normalizedUrl, domain)
+			: await this.urlProvider.isShortAvailable(alias, domain)
+
+		return storeResult
+			? { result: 'success', short: shortUrl }
+			: { result: 'alias_unavaiable', input: 'alias' }
 	}
 
 	private async generateAndStoreShortUrl(
-		normalizedUrl: string
+		normalizedUrl: string,
+		domain: string
 	): Promise<string> {
 		const generator = this.hashFunction(normalizedUrl)
 		const maxAttempts = 100
@@ -121,6 +128,7 @@ export class ShortenService {
 				// eslint-disable-next-line no-await-in-loop
 				const normalizeAliasResult = await this.tryStoreAlias(
 					alias,
+					domain,
 					normalizedUrl,
 					true
 				)
@@ -135,6 +143,7 @@ export class ShortenService {
 
 	public async shorten(
 		url: string,
+		domain?: string,
 		storeAuth?: boolean,
 		alias?: string
 	): Promise<ShortenResult> {
@@ -152,8 +161,13 @@ export class ShortenService {
 			// I miss the Result monad and pattern matching
 			const aliasResult =
 				urlResult.result === 'success'
-					? await this.tryStoreAlias(alias, urlResult.normalizedUrl, true)
-					: await this.tryStoreAlias(alias, false)
+					? await this.tryStoreAlias(
+							alias,
+							domain ?? this.hostname,
+							urlResult.normalizedUrl,
+							true
+					  )
+					: await this.tryStoreAlias(alias, domain ?? this.hostname, false)
 
 			if (aliasResult.result !== 'success') {
 				problems.push(aliasResult)
@@ -161,7 +175,10 @@ export class ShortenService {
 				;({ short } = aliasResult)
 			}
 		} else if (urlResult.result === 'success') {
-			short = await this.generateAndStoreShortUrl(urlResult.normalizedUrl)
+			short = await this.generateAndStoreShortUrl(
+				urlResult.normalizedUrl,
+				domain ?? this.hostname
+			)
 		}
 
 		if (urlResult.result === 'success' && short) {

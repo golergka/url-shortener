@@ -7,9 +7,14 @@ export = (shortenService: ShortenService): Router => {
 	router.post('/', async (req, res, next) => {
 		try {
 			const {
-				body: { url, storeAuth, alias }
+				body: { url, storeAuth, alias, domain }
 			} = req
-			const shortenResult = await shortenService.shorten(url, storeAuth, alias)
+			const shortenResult = await shortenService.shorten(
+				url,
+				domain,
+				storeAuth,
+				alias
+			)
 			res.status(shortenResult.success ? 200 : 400).send(shortenResult)
 		} catch (e) {
 			// Throwing erros is not supported until Express 5?...

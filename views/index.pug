@@ -44,8 +44,9 @@ block content
           div(class='level-left')
             div(class='select')
               select(name='domain', value=domain)
-                each domain in domains
-                  option= domain
+                each domain, index in domains
+                  - const first = index === 0
+                  option(value=domain, selected=first)= domain
         div(class='level-right')
           div(class='control')
             input(

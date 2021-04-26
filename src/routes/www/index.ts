@@ -15,7 +15,12 @@ export = (shortenService: ShortenService, domains: string[]): Router => {
 			const {
 				body: { url, storeAuth, alias, domain }
 			} = req
-			const shortenResult = await shortenService.shorten(url, storeAuth, alias)
+			const shortenResult = await shortenService.shorten(
+				url,
+				domain,
+				storeAuth,
+				alias
+			)
 			res.render('index', { ...req.body, ...shortenResult, domains })
 		} catch (e) {
 			next(e)

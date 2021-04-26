@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { UrlProvider } from '../providers/url'
 
-export = (urlProvider: UrlProvider): Router => {
+export = (urlProvider: UrlProvider, domain: string): Router => {
 	const router = Router()
 
 	router.get('/:short', async (req, res, next) => {
@@ -11,7 +11,7 @@ export = (urlProvider: UrlProvider): Router => {
 			return
 		}
 
-		const url = await urlProvider.getOriginalUrl(short)
+		const url = await urlProvider.getOriginalUrl(short, domain)
 		if (!url) {
 			next('route')
 		} else {
