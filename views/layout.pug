@@ -2,5 +2,8 @@ doctype html
 html
   head
     title= title
+    link(rel='stylesheet', href='/static/bulma.min.css')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
   body
-    block content
+    div(class='content container section is-medium')
+      block content

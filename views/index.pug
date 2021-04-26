@@ -1,9 +1,12 @@
 extends layout
 
 block content
-  h1= 'hi'
+  h1= 'Link shortener'
   form(action='/shorten', method='POST')
-    p
-      | url: 
-      input(type='text', name='url', value='')
-    input(type='submit', value='Submit')
+    div(class='field')
+      label(class='label') Original url
+      div(class='control')
+        input(type='text', name='url', value='', class='input')
+    div(class='field')
+      div(class='control')
+        input(type='submit', value='Submit', class='button is-link')

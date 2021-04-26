@@ -2,16 +2,19 @@ extends layout
 
 block content
   h1 Security warning
-  p Your url has leaked authentication parameters!
-  p Are you sure you want to submit them?
-  form(action='/shorten', method='POST')
-    p We automatically removed sensitive information:
-      a(href=fixedUrl) #{fixedUrl}
-    input(type='hidden', name='url', value=fixedUrl)
-    input(type='submit', value='Remove sensitive information')
-  form(action='/shorten', method='POST')
-    p Your original url:
-      a(href=url) #{url}
-    input(type='hidden', name='url', value=url)
-    input(type='hidden', name='storeAuth', value='true')
-    input(type='submit', value='Leave sensitive information in')
+  p Your url has leaked authentication parameters! Are you sure you want to submit them?
+  div(class='box')
+    form(action='/shorten', method='POST')
+      p We automatically removed sensitive information:
+      blockquote 
+        a(href=fixedUrl) #{fixedUrl}
+      input(type='hidden', name='url', value=fixedUrl)
+      input(type='submit', value='Remove sensitive information', class='button is-link')
+  div(class='box')
+    form(action='/shorten', method='POST')
+      p Your original url:
+      blockquote 
+        a(href=url) #{url}
+      input(type='hidden', name='url', value=url)
+      input(type='hidden', name='storeAuth', value='true')
+      input(type='submit', value='Leave sensitive information in', class='button is-link')
