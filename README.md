@@ -26,7 +26,7 @@ This is a toy url shortener — a web application that creates short URL's from 
 * [ ] Health checks
 * [ ] Tighter validation
 * [ ] Error reporting (Sentry)
-* [ ] Containerize (Docker)
+* [x] Containerize (Docker)
 * [ ] REST API documentation (Swagger?)
 * [ ] Automatic horizontal scaling (Kubernetes or just AWS EBS?)
 * [ ] Monitoring (Prometeus + Grafana?)
@@ -40,11 +40,14 @@ This is a toy url shortener — a web application that creates short URL's from 
 * [ ] Localization
 * [x] Custom short URL
 * [x] Multiple domains
+* [ ] QR Code generation
 * [ ] User login/registration - separate service and db?
 * [ ] Editing links (for logged in users) - Kafka for cache layer update
 * [ ] Analytics (Kafka + Clickhouse)
 
 ## Running the project
+
+### Natively
 
 To start the project:
 
@@ -54,6 +57,22 @@ To start the project:
 4. Provide Postgresql connection details and other parameters in environment variables (see below)
 5. Run `npm i`, `npm build` and `npm start`
 6. Now the HTTP server is up and running on host and port you specified
+
+### With docker
+
+Build the docker image:
+
+```Bash
+docker build -t url-shortener .
+```
+
+And run it:
+
+```Bash
+docker run --env-file .env -dp 80:80 --network bridge url-shortener
+```
+
+Please, be vary that if you run Postgresql and Redis from docker as well, they're exposed as 127.0.0.1 to your machine, but to other docker VMs on the same network (typically, `bridge`), they can have different IP addresses. Use [this resource](https://maximorlov.com/4-reasons-why-your-docker-containers-cant-talk-to-each-other/) to debug these network connectivity issues.
 
 ### Scripts
 
@@ -89,7 +108,7 @@ HOSTNAME=http://localhost:80
 NODE_ENV=production
 
 # Redis connection URL
-REDIS_URL="redis://127.0.0.1:6379"
+REDIS_URL=redis://127.0.0.1:6379
 ```
 
 ## Libraries used
