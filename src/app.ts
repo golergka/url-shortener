@@ -8,22 +8,27 @@ import shortenRouter from './routes/shorten'
 import { ShortenService } from './services/shorten'
 
 export interface AppParameters {
-	db?: Pool | PoolClient
+	db: Pool | PoolClient
+	hostname: string
 	hashFunction?: HashFunction
 }
 
 export async function makeApp(
-	params?: AppParameters
+	params: AppParameters
 ): Promise<express.Application> {
-	const client = params?.db || new Pool()
 	const hashFunction = params?.hashFunction || defaultHashFunction
 
-	await migrate({ client }, 'migrations')
+	await migrate({ client: params.db }, 'migrations')
 
 	// When there's over 10 providers and services, bring in DI framework
 
-	const urlProvider = new UrlProvider(client)
-	const shortenService = new ShortenService(urlProvider, hashFunction)
+	const urlProvider = new UrlProvider(params.db)
+	const shortenService = new ShortenService(
+		urlProvider, 
+		hashFunction, 
+		params.hostname, 
+		[ '/api']
+	)
 
 	const app: express.Application = express()
 

@@ -10,7 +10,8 @@ describe(`api/v1/shorten route`, () => {
 				db,
 				hashFunction: function* (original) {
 					yield 'yeet'
-				}
+				},
+				hostname: 'http://localhost'
 			})
 
 			const res = await request(app)
@@ -18,7 +19,7 @@ describe(`api/v1/shorten route`, () => {
 				.send({ url: 'https://google.com' })
 				.expect(200)
 
-			expect(res.body.short).toBe('yeet')
+			expect(res.body.short).toBe('http://localhost/yeet')
 			expect(res.body.original).toBe('https://google.com')
 		})
 	)
@@ -29,7 +30,8 @@ describe(`api/v1/shorten route`, () => {
 				db,
 				hashFunction: function* (_) {
 					// empty
-				}
+				},
+				hostname: 'http://localhost'
 			})
 
 			await request(app)
@@ -94,7 +96,8 @@ describe(`api/v1/shorten route`, () => {
 		dbTest(async (db) => {
 			const app1 = await makeApp({
 				db,
-				hashFunction: makeHashFunction('sha1', 'base64', 12)
+				hashFunction: makeHashFunction('sha1', 'base64', 12),
+				hostname: 'http://localhost'
 			})
 
 			const {
@@ -106,10 +109,37 @@ describe(`api/v1/shorten route`, () => {
 
 			const app2 = await makeApp({
 				db,
-				hashFunction: makeHashFunction('md5', 'base64', 12)
+				hashFunction: makeHashFunction('md5', 'base64', 12),
+				hostname: 'http://localhost'
 			})
 
-			await request(app2).get(`/${short}`).expect(308)
+			const hash = short.replace('http://localhost/', '')
+
+			await request(app2).get(`/${hash}`).expect(308)
+		})
+	)
+
+	it.concurrent(`doesn't accept a hash that is identical to one of app urls`, () =>
+		dbTest(async (db) => {
+			const app = await makeApp({
+				db,
+				hashFunction: function* (_) {
+					// Roots that should be filtered out:
+					yield 'api/v1/shorten' // the current shorten route
+					yield 'api/asdasd' // it should filter all routes beginning on API
+
+					// It should fall back to:
+					yield 'yeet'
+				},
+				hostname: 'http://localhost'
+			})
+
+			const { body: { short } } = await request(app)
+				.post('/api/v1/shorten')
+				.send({ url: 'http://google.com' })
+				.expect(200)
+
+			expect(short).toBe('http://localhost/yeet')
 		})
 	)
 })

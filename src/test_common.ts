@@ -15,12 +15,13 @@ export async function appTest(
 		app: Express.Application
 		db: PoolClient
 	}) => Promise<unknown>,
-	params?: Omit<AppParameters, 'db'>
+	params?: Partial<Omit<AppParameters, 'db'>>
 ): Promise<void> {
 	await dbTest(async (db) => {
 		const app = await makeApp({
 			db,
-			...params
+			hostname: params?.hostname || 'http://localhost',
+			hashFunction: params?.hashFunction
 		})
 		await callback({ app, db })
 	})

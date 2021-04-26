@@ -8,10 +8,17 @@ export type ShortenResult =
 	| { result: 'auth_leaked' }
 
 export class ShortenService {
+	
+	private readonly reservedURLs: string[]
+
 	constructor(
 		private readonly urlProvider: UrlProvider,
-		private readonly hashFunction: HashFunction
-	) {}
+		private readonly hashFunction: HashFunction,
+		private readonly hostname: string,
+		reservedPaths: string[]
+	) {
+		this.reservedURLs = reservedPaths.map(path => normalizeUrl(`${hostname}/${path}`))
+	}
 
 	public async shorten(url: string, storeAuth?: boolean): Promise<ShortenResult> {
 		let normalizedUrl
@@ -32,18 +39,22 @@ export class ShortenService {
 		}
 
 		const generator = this.hashFunction(normalizedUrl)
-		let tryResult
-		let short
+		let success
+		let hash
+		let short: string
 		do {
 			const genNext = generator.next()
 			if (genNext.done) {
 				throw new Error(`hash function out of values`)
 			} else {
-				short = genNext.value
-				// eslint-disable-next-line no-await-in-loop
-				tryResult = await this.urlProvider.tryStoreUrl(short, normalizedUrl)
+				hash = genNext.value
+				short = normalizeUrl(`${this.hostname}/${hash}`)
+				// eslint-disable no-await-in-loop
+				success = (this.reservedURLs.every(r => !short.includes(r)))
+					&& await this.urlProvider.tryStoreUrl(hash, normalizedUrl)
+				// eslint-enable no-await-in-loop
 			}
-		} while (!tryResult)
+		} while (!success)
 
 		return {
 			result: 'success',
