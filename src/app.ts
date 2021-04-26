@@ -40,7 +40,7 @@ export async function makeApp(
 	app.set('view engine', 'pug')
 
 	app.use('/', redirectRouter(urlProvider))
-	app.use('/', wwwRouter(shortenService))
+	app.use('/', wwwRouter(shortenService, [params.hostname]))
 	app.use('/api/v1', apiRouter(shortenService))
 
 	if (params.debug) {

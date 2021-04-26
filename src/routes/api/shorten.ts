@@ -6,27 +6,11 @@ export = (shortenService: ShortenService): Router => {
 
 	router.post('/', async (req, res, next) => {
 		try {
-			const shortenResult = await shortenService.shorten(
-				req.body.url,
-				req.body.storeAuth
-			)
-			switch (shortenResult.result) {
-				case 'success':
-					{
-						const { short, original } = shortenResult
-						res.status(200).send({ short, original })
-					}
-					break
-				case 'invalid_url':
-					res.status(400).send({
-						error: 'Invalid URL'
-					})
-					break
-				case 'auth_leaked':
-					res.status(400).send({
-						error: `Authentication information leaked - use storeAuth:true if it's intended`
-					})
-			}
+			const {
+				body: { url, storeAuth, alias }
+			} = req
+			const shortenResult = await shortenService.shorten(url, storeAuth, alias)
+			res.status(shortenResult.success ? 200 : 400).send(shortenResult)
 		} catch (e) {
 			// Throwing erros is not supported until Express 5?...
 			next(e)

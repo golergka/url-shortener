@@ -15,9 +15,14 @@ export function makeHashFunction(
 	length: number
 ): HashFunction {
 	return function* (original: string) {
-		const hash = createHash(algorithm)
+		let counter = 0
 		while (true) {
-			yield hash.update(original).digest(encoding).slice(0, length)
+			yield createHash(algorithm)
+				.update(`${original}${counter}`)
+				.digest(encoding)
+				.slice(0, length)
+				.toLowerCase()
+			counter++
 		}
 	}
 }
@@ -26,5 +31,5 @@ export function makeHashFunction(
 export const defaultHashFunction: HashFunction = makeHashFunction(
 	'sha1',
 	'base64',
-	12
+	8
 )

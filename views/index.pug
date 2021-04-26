@@ -1,12 +1,73 @@
 extends layout
 
 block content
-  h1= 'Link shortener'
-  form(action='/shorten', method='POST')
+  - const urlProblem = problems && problems.some(p => p.input === 'url')
+  - const aliasProblem = problems && problems.some(p => p.input === 'alias')
+  - const invalidUrl = problems && problems.some(p => p.result === 'invalid_url')
+  - const authLeaked = problems && problems.some(p => p.result === 'auth_leaked')
+  - const invalidAlias = problems && problems.some(p => p.result === 'invalid_alias')
+  - const aliasUnavailable = problems && problems.some(p => p.result === 'alias_unavailable')
+  form(action='/', method='POST')
     div(class='field')
-      label(class='label') Original url
+      label(class='label', for='url-input')
+        if success
+          | Your long URL
+        else
+          | Enter a long link to get a short one
       div(class='control')
-        input(type='text', name='url', value='', class='input')
+        input(
+          id='url-input', 
+          type='text', 
+          name='url', 
+          value=success ? original : url, 
+          class=urlProblem ? 'input is-danger' : 'input',
+          required=true
+          readonly=success
+        )
+        if invalidUrl
+          p(class='help is-danger') invalid url
+        if authLeaked
+          p(class='help is-danger') authentication information leaked
+    if authLeaked
+      div(class='field')
+        label(class='cbeckbox')
+          input(type='checkbox', value=false, name='storeAuth')
+          | Submit with authentication information
     div(class='field')
-      div(class='control')
-        input(type='submit', value='Submit', class='button is-link')
+      label(class='label')
+        if success
+          | Shortened URL
+        else
+          | Customize your link
+      div(class='level is-mobile')
+        if !success
+          div(class='level-left')
+            div(class='select')
+              select(name='domain', value=domain)
+                each domain in domains
+                  option= domain
+        div(class='level-right')
+          div(class='control')
+            input(
+              type='text', 
+              name='alias', 
+              value=success ? short : alias, 
+              class=aliasProblem ? 'input is-danger' : 'input', 
+              placeholder='alias',
+              minlength=1,
+              maxlength=20,
+              requred=false
+              readonly=success
+            )
+      if invalidAlias
+        p(class='help is-danger') invalid alias
+      if aliasUnavailable
+        p(class='help is-danger') alias already taken
+    div(class='field')
+      if success
+        div(class='control')
+          a(href='/', class='button is-link')
+            | Shorten another
+      else
+        div(class='control')
+          input(type='submit', value='Make short!', class='button is-link')

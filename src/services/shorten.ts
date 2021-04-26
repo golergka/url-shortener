@@ -2,16 +2,25 @@ import normalizeUrl from 'normalize-url'
 import { HashFunction } from '../hash_function'
 import { UrlProvider } from '../providers/url'
 
-export type ShortenResult =
-	| { result: 'success'; short: string; original: string }
-	| { result: 'invalid_url' }
-	| { result: 'auth_leaked'; fixedUrl: string }
+type UrlProblem =
+	| { result: 'invalid_url'; input: 'url' }
+	| { result: 'auth_leaked'; fixedUrl: string; input: 'url' }
 
-const normalizeOptions: normalizeUrl.Options = {
-	stripTextFragment: false,
-	stripWWW: false,
-	removeQueryParameters: []
-}
+type NormalizeUrlResult =
+	| { result: 'success'; normalizedUrl: string }
+	| UrlProblem
+
+type AliasProblem =
+	| { result: 'invalid_alias'; input: 'alias' }
+	| { result: 'alias_unavaiable'; input: 'alias' }
+
+type CheckStoreAliasResult = { result: 'success'; short: string } | AliasProblem
+
+type ShortenProblem = UrlProblem | AliasProblem
+
+export type ShortenResult =
+	| { success: true; short: string; original: string }
+	| { success: false; problems: ShortenProblem[] }
 
 export class ShortenService {
 	private readonly reservedURLs: string[]
@@ -27,10 +36,13 @@ export class ShortenService {
 		)
 	}
 
-	public async shorten(
-		url: string,
-		storeAuth?: boolean
-	): Promise<ShortenResult> {
+	private normalizeUrl(url: string, storeAuth?: boolean): NormalizeUrlResult {
+		const normalizeOptions: normalizeUrl.Options = {
+			stripTextFragment: false,
+			stripWWW: false,
+			removeQueryParameters: []
+		}
+
 		let normalizedUrl
 		try {
 			normalizedUrl = normalizeUrl(url, {
@@ -44,38 +56,125 @@ export class ShortenService {
 					stripAuthentication: true,
 					...normalizeOptions
 				})
-				return { result: 'auth_leaked', fixedUrl }
+				return { result: 'auth_leaked', fixedUrl, input: 'url' }
 			}
+
 			if (parsedUrl.hostname.split('.').length < 2) {
-				return { result: 'invalid_url' }
+				return { result: 'invalid_url', input: 'url' }
 			}
+
+			return { result: 'success', normalizedUrl }
 		} catch (_) {
-			return { result: 'invalid_url' }
+			return { result: 'invalid_url', input: 'url' }
+		}
+	}
+
+	/** Checks alias for correctnes and attempts to store it, or just checks */
+	private async tryStoreAlias(
+		alias: string,
+		store: false
+	): Promise<CheckStoreAliasResult>
+	private async tryStoreAlias(
+		alias: string,
+		normalizedUrl: string,
+		store: true
+	): Promise<CheckStoreAliasResult>
+	private async tryStoreAlias(
+		alias: string,
+		normalizedUrl: string | false
+	): Promise<CheckStoreAliasResult> {
+		// Alias can contain only lower case letters and digits, and be up to 20 characters
+		const aliasRegex = /^[a-z0-9-_]{1,20}$/gm
+		if (!aliasRegex.test(alias)) {
+			return { result: 'invalid_alias', input: 'alias' }
 		}
 
+		try {
+			const shortUrl = normalizeUrl(`${this.hostname}/${alias}`)
+			if (this.reservedURLs.some((r) => shortUrl.includes(r))) {
+				return { result: 'invalid_alias', input: 'alias' }
+			}
+			const storeResult = normalizedUrl
+				? await this.urlProvider.tryStoreUrl(alias, normalizedUrl)
+				: await this.urlProvider.isShortAvailable(alias)
+
+			return storeResult
+				? { result: 'success', short: shortUrl }
+				: { result: 'alias_unavaiable', input: 'alias' }
+		} catch (_) {
+			return { result: 'invalid_alias', input: 'alias' }
+		}
+	}
+
+	private async generateAndStoreShortUrl(
+		normalizedUrl: string
+	): Promise<string> {
 		const generator = this.hashFunction(normalizedUrl)
-		let success
-		let hash
-		let short: string
-		do {
+		const maxAttempts = 100
+
+		for (let attempts = 0; attempts < maxAttempts; attempts++) {
 			const genNext = generator.next()
 			if (genNext.done) {
 				throw new Error(`hash function out of values`)
 			} else {
-				hash = genNext.value
-				short = normalizeUrl(`${this.hostname}/${hash}`)
-				/* eslint-disable no-await-in-loop */
-				success =
-					this.reservedURLs.every((r) => !short.includes(r)) &&
-					(await this.urlProvider.tryStoreUrl(hash, normalizedUrl))
-				/* eslint-enable no-await-in-loop */
+				const alias = genNext.value
+				// eslint-disable-next-line no-await-in-loop
+				const normalizeAliasResult = await this.tryStoreAlias(
+					alias,
+					normalizedUrl,
+					true
+				)
+				if (normalizeAliasResult.result === 'success') {
+					return normalizeAliasResult.short
+				}
 			}
-		} while (!success)
+		}
 
-		return {
-			result: 'success',
-			original: normalizedUrl,
-			short
+		throw new Error(`couldn't generate short url in ${maxAttempts} attempts`)
+	}
+
+	public async shorten(
+		url: string,
+		storeAuth?: boolean,
+		alias?: string
+	): Promise<ShortenResult> {
+		const problems: ShortenProblem[] = []
+
+		const urlResult = this.normalizeUrl(url, storeAuth)
+
+		if (urlResult.result !== 'success') {
+			problems.push(urlResult)
+		}
+
+		let short: string | null = null
+
+		if (alias) {
+			// I miss the Result monad and pattern matching
+			const aliasResult =
+				urlResult.result === 'success'
+					? await this.tryStoreAlias(alias, urlResult.normalizedUrl, true)
+					: await this.tryStoreAlias(alias, false)
+
+			if (aliasResult.result !== 'success') {
+				problems.push(aliasResult)
+			} else {
+				;({ short } = aliasResult)
+			}
+		} else if (urlResult.result === 'success') {
+			short = await this.generateAndStoreShortUrl(urlResult.normalizedUrl)
+		}
+
+		if (urlResult.result === 'success' && short) {
+			return {
+				success: true,
+				original: urlResult.normalizedUrl,
+				short
+			}
+		} else {
+			return {
+				success: false,
+				problems
+			}
 		}
 	}
 }

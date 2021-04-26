@@ -8,7 +8,7 @@ export class UrlProvider {
 		private readonly redis?: Redis.Redis
 	) {}
 
-	makeRedisKey = (short: string) => `url:${short}`
+	makeRedisKey = (short: string): string => `url:${short}`
 
 	public async getOriginalUrl(short: string): Promise<string | null> {
 		if (this.redis) {
@@ -25,6 +25,10 @@ export class UrlProvider {
 			await this.redis.set(this.makeRedisKey(short), url)
 		}
 		return url
+	}
+
+	public async isShortAvailable(short: string): Promise<boolean> {
+		return !(await this.getOriginalUrl(short))
 	}
 
 	/**

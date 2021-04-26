@@ -75,7 +75,9 @@ describe(`api/v1/shorten route`, () => {
 					.send({ url: 'invalid url' })
 					.expect(400)
 
-				expect(res.body.error).toBe('Invalid URL')
+				expect(res.body.problems).toEqual([
+					{ result: 'invalid_url', input: 'url' }
+				])
 			})
 	)
 
@@ -88,7 +90,9 @@ describe(`api/v1/shorten route`, () => {
 					.send({ url: 'localhost' })
 					.expect(400)
 
-				expect(res.body.error).toBe('Invalid URL')
+				expect(res.body.problems).toEqual([
+					{ result: 'invalid_url', input: 'url' }
+				])
 			})
 	)
 
@@ -112,9 +116,9 @@ describe(`api/v1/shorten route`, () => {
 					.send({ url: 'http://user:password@domain.com' })
 					.expect(400)
 
-				expect(res.body.error).toBe(
-					`Authentication information leaked - use storeAuth:true if it's intended`
-				)
+				expect(res.body.problems).toEqual([
+					{ result: 'auth_leaked', input: 'url', fixedUrl: 'http://domain.com' }
+				])
 			})
 	)
 
@@ -185,5 +189,21 @@ describe(`api/v1/shorten route`, () => {
 
 				expect(short).toBe('http://localhost/yeet')
 			})
+	)
+
+	it.concurrent(`stores by a provided alias`, () =>
+		appTest(async ({ app }) => {
+			const shortenRes = await request(app)
+				.post('/api/v1/shorten')
+				.send({ url: 'http://google.com', alias: 'my_alias' })
+				.expect(200)
+
+			expect(shortenRes.body.short).toBe('http://localhost/my_alias')
+
+			await request(app)
+				.get('/my_alias')
+				.expect(308)
+				.expect('Location', 'http://google.com')
+		})
 	)
 })

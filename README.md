@@ -22,6 +22,7 @@ This is a toy url shortener — a web application that creates short URL's from 
 ### Non-functional improvements
 
 * [x] Caching (Redis)
+* [ ] Gradefully handle disconnect from Postgresql or Redis at runtime
 * [ ] Health checks
 * [ ] Error reporting (Sentry)
 * [ ] Containerize (Docker)
@@ -35,7 +36,8 @@ This is a toy url shortener — a web application that creates short URL's from 
 ### Functional improvements
 
 * [ ] Client-side URL validation
-* [ ] Custom short URL
+* [ ] Localization
+* [x] Custom short URL
 * [ ] Multiple domains
 * [ ] User login/registration - separate service and db?
 * [ ] Editing links (for logged in users) - Kafka for cache layer update
