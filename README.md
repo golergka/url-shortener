@@ -13,7 +13,6 @@ This is a toy url shortener — a web application that creates short URL's from 
   * [x] Return a basic redirect
   * [x] Redirect with HTML that contains a simple text message
   * [x] Return 404 status when failed to find code
-  * [ ] Provide a detailed 404 page
 * [x] Web app
   * [x] Error page for invalid URL
   * [x] Error page for auth leaked error

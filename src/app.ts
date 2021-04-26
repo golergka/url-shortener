@@ -12,6 +12,7 @@ export interface AppParameters {
 	db: Pool | PoolClient
 	hostname: string
 	hashFunction?: HashFunction
+	debug?: boolean
 }
 
 export async function makeApp(
@@ -28,7 +29,7 @@ export async function makeApp(
 		urlProvider,
 		hashFunction,
 		params.hostname,
-		['/api', '/static']
+		['/api', '/static', '/shorten', '/health', '/error']
 	)
 
 	const app: express.Application = express()
@@ -40,10 +41,20 @@ export async function makeApp(
 	app.use('/', wwwRouter(shortenService))
 	app.use('/api/v1', apiRouter(shortenService))
 
-	const errorHandler: ErrorRequestHandler = function (err, req, res) {
+	if (params.debug) {
+		app.get('/error', function (_req, _res, next) {
+			next(new Error('test error'))
+		})
+	}
+
+	app.use(function (_req, res) {
+		res.status(404).render('404')
+	})
+
+	const errorHandler: ErrorRequestHandler = function (err, _req, res, _next) {
 		// set locals, only providing error in development
 		res.locals.message = err.message
-		res.locals.error = req.app.get('env') === 'development' ? err : {}
+		res.locals.error = params.debug ? err : {}
 
 		// render the error page
 		res.status(err.status || 500)
