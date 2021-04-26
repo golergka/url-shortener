@@ -100,6 +100,7 @@ This is my boilerplate. There are many like it, but this one is mine.
 ### Logic etc
 
 * **normalize-url** - helps handling client-provided URLs that may be incomplete
+* **pug** - templating engine
 
 # Architecture
 
