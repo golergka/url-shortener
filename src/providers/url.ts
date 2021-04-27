@@ -4,7 +4,9 @@ import {
 	getOriginalUrl,
 	tryStoreUrl,
 	getDomainId,
-	getDomains
+	getDomains,
+	setUrlsUserId,
+	setUrlAlias
 } from './url.queries'
 
 export class UrlProvider {
@@ -44,29 +46,50 @@ export class UrlProvider {
 		return id
 	}
 
+	async cache(
+		alias: string,
+		domainId: number,
+		original: string | null
+	): Promise<void> {
+		if (!this.redis || !original) {
+			return
+		}
+
+		const key = this.makeRedisKey(alias, domainId)
+		await this.redis.set(key, original)
+	}
+
+	async getCached(alias: string, domainId: number): Promise<string | null> {
+		if (!this.redis) {
+			return null
+		}
+
+		const key = this.makeRedisKey(alias, domainId)
+		return await this.redis.get(key)
+	}
+
 	public async getOriginalUrl(
-		short: string,
+		alias: string,
 		domain: string
 	): Promise<string | null> {
-		const domainID = await this.getDomainId(domain)
+		const domainId = await this.getDomainId(domain)
 
-		if (this.redis) {
-			const url = await this.redis.get(this.makeRedisKey(short, domainID))
-			if (url) {
-				return url
-			}
+		const cached = await this.getCached(alias, domainId)
+		if (cached) {
+			return cached
 		}
 
-		const [entry] = await getOriginalUrl.run({ short, domainID }, this.db)
+		const [entry] = await getOriginalUrl.run(
+			{ alias, domainID: domainId },
+			this.db
+		)
 		const url = entry?.original
 
-		if (url && this.redis) {
-			await this.redis.set(this.makeRedisKey(short, domainID), url)
-		}
+		await this.cache(alias, domainId, url)
 		return url
 	}
 
-	public async isShortAvailable(
+	public async isAliasAvailable(
 		short: string,
 		domain: string
 	): Promise<boolean> {
@@ -76,38 +99,52 @@ export class UrlProvider {
 	/**
 	 * Attempts to store the shortened url
 	 *
-	 * @returns was the attempt successful
+	 * @returns id if the attempt was successful
 	 */
 	public async tryStoreUrl(
-		short: string,
+		alias: string,
 		original: string,
-		domain: string
-	): Promise<boolean> {
+		domain: string,
+		userId: number | null
+	): Promise<number | null> {
 		const domainId = await this.getDomainId(domain)
 
-		if (this.redis) {
-			const stored = await this.redis.get(this.makeRedisKey(short, domainId))
-			if (stored) {
-				return stored === original
-			}
+		if (await this.getCached(alias, domainId)) {
+			return null
 		}
 
 		// We try storing, but don't override existing value
-		await tryStoreUrl.run({ short, original, domainId }, this.db)
-
-		// Then we check what value was stored
-		const [{ original: stored }] = await getOriginalUrl.run(
-			{ short, domainID: domainId },
+		const [stored] = await tryStoreUrl.run(
+			{ alias, original, domainId, userId },
 			this.db
 		)
-
-		if (this.redis) {
-			await this.redis.set(this.makeRedisKey(short, domainId), stored)
+		if (!stored) {
+			return null
 		}
 
-		// If it's the same as the one we wanted to store, we're successful.
-		// It could happen even if it was stored there before and we didn't
-		// actually write anything.
-		return stored === original
+		await this.cache(alias, domainId, original)
+
+		const { id } = stored
+
+		return id
+	}
+
+	public async setUrlsUser(urlIds: number[], userId: number): Promise<void> {
+		if (urlIds.length === 0) {
+			throw new Error(`no urls provided`)
+		}
+
+		await setUrlsUserId.run({ urlIds, userId }, this.db)
+	}
+
+	public async setUrlAlias(
+		urlId: number,
+		userId: number,
+		alias: string
+	): Promise<void> {
+		const [stored] = await setUrlAlias.run({ urlId, userId, alias }, this.db)
+		if (!stored) {
+			throw new Error(`wrong url id ${urlId} or user id ${userId}`)
+		}
 	}
 }

@@ -1,0 +1,2 @@
+ALTER TABLE urls
+RENAME COLUMN short TO alias;

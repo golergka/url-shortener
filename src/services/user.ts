@@ -1,6 +1,7 @@
 import { VerifyFunction } from 'passport-local'
 import { User, UserProvider } from '../providers/user'
 import bcrypt from 'bcrypt'
+import { UrlProvider } from '../providers/url'
 
 export type RegisterProblem =
 	| { result: 'invalid_password'; input: 'password' }
@@ -14,7 +15,10 @@ const usernameRegex = /^[a-zA-Z0-9\-_]{3,20}$/m
 const passwordRegex = /^[a-zA-Z0-9\-_]{8,64}$/m
 
 export class UserService {
-	public constructor(private readonly userProvider: UserProvider) {}
+	public constructor(
+		private readonly userProvider: UserProvider,
+		private readonly urlProvider: UrlProvider
+	) {}
 
 	public login: VerifyFunction = async (username, password, done) => {
 		const user = await this.userProvider.getUserByName(username)
@@ -35,7 +39,8 @@ export class UserService {
 
 	public register = async (
 		username: string,
-		password: string
+		password: string,
+		urlIds: number[]
 	): Promise<RegisterResult> => {
 		const problems: RegisterProblem[] = []
 
@@ -61,6 +66,9 @@ export class UserService {
 				problems.push({ result: 'user_exists', input: 'username' })
 				return { success: false, problems }
 			} else {
+				if (urlIds.length > 0) {
+					await this.urlProvider.setUrlsUser(urlIds, user.id)
+				}
 				return { success: true, user }
 			}
 		}

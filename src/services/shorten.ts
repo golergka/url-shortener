@@ -12,14 +12,31 @@ type NormalizeUrlResult =
 
 type AliasProblem =
 	| { result: 'invalid_alias'; input: 'alias' }
-	| { result: 'alias_unavaiable'; input: 'alias' }
+	| { result: 'alias_unavailable'; input: 'alias' }
 
-type CheckStoreAliasResult = { result: 'success'; short: string } | AliasProblem
+type CheckAliasParams = {
+	alias: string
+	domain: string
+	store: false
+}
+
+type StoreAliasParams = {
+	alias: string
+	domain: string
+	original: string
+	userId: number | null
+	store: true
+}
+
+type CheckAliasSuccess = { result: 'success'; short: string }
+type StoreAliasSuccess = CheckAliasSuccess & { id: number; original: string }
+type CheckAliasResult = CheckAliasSuccess | AliasProblem
+type StoreAliasResult = StoreAliasSuccess | AliasProblem
 
 type ShortenProblem = UrlProblem | AliasProblem
 
 export type ShortenResult =
-	| { success: true; short: string; original: string }
+	| { success: true; short: string; original: string; id: number }
 	| { success: false; problems: ShortenProblem[] }
 
 // Alias can contain only lower case letters and digits, and be up to 20 characters
@@ -74,49 +91,53 @@ export class ShortenService {
 
 	/** Checks alias for correctnes and attempts to store it, or just checks */
 	private async tryStoreAlias(
-		alias: string,
-		domain: string,
-		store: false
-	): Promise<CheckStoreAliasResult>
+		params: CheckAliasParams
+	): Promise<CheckAliasResult>
 	private async tryStoreAlias(
-		alias: string,
-		domain: string,
-		normalizedUrl: string,
-		store: true
-	): Promise<CheckStoreAliasResult>
+		params: StoreAliasParams
+	): Promise<StoreAliasResult>
 	private async tryStoreAlias(
-		alias: string,
-		domain: string,
-		normalizedUrl: string | false
-	): Promise<CheckStoreAliasResult> {
+		params: CheckAliasParams | StoreAliasParams
+	): Promise<CheckAliasResult | StoreAliasResult> {
+		const { alias, domain } = params
 		if (!alias || !aliasRegex.test(alias)) {
 			return { result: 'invalid_alias', input: 'alias' }
 		}
 
-		let shortUrl: string
+		let short: string
 		try {
-			shortUrl = normalizeUrl(`${this.hostname}/${alias}`)
+			short = normalizeUrl(`${this.hostname}/${alias}`)
 		} catch (_) {
 			return { result: 'invalid_alias', input: 'alias' }
 		}
 
-		if (this.reservedURLs.some((r) => shortUrl.includes(r))) {
+		if (this.reservedURLs.some((r) => short.includes(r))) {
 			return { result: 'invalid_alias', input: 'alias' }
 		}
 
-		const storeResult = normalizedUrl
-			? await this.urlProvider.tryStoreUrl(alias, normalizedUrl, domain)
-			: await this.urlProvider.isShortAvailable(alias, domain)
-
-		return storeResult
-			? { result: 'success', short: shortUrl }
-			: { result: 'alias_unavaiable', input: 'alias' }
+		if (!params.store) {
+			return (await this.urlProvider.isAliasAvailable(alias, domain))
+				? { result: 'success', short }
+				: { result: 'alias_unavailable', input: 'alias' }
+		} else {
+			const { original, userId } = params
+			const id = await this.urlProvider.tryStoreUrl(
+				alias,
+				original,
+				domain,
+				userId
+			)
+			return id
+				? { result: 'success', short, id, original }
+				: { result: 'alias_unavailable', input: 'alias' }
+		}
 	}
 
 	private async generateAndStoreShortUrl(
 		normalizedUrl: string,
-		domain: string
-	): Promise<string> {
+		domain: string,
+		userId: number | null
+	): Promise<StoreAliasSuccess> {
 		const generator = this.hashFunction(normalizedUrl)
 		const maxAttempts = 100
 
@@ -127,14 +148,15 @@ export class ShortenService {
 			} else {
 				const alias = genNext.value
 				// eslint-disable-next-line no-await-in-loop
-				const normalizeAliasResult = await this.tryStoreAlias(
+				const normalizeAliasResult = await this.tryStoreAlias({
 					alias,
 					domain,
-					normalizedUrl,
-					true
-				)
+					original: normalizedUrl,
+					userId,
+					store: true
+				})
 				if (normalizeAliasResult.result === 'success') {
-					return normalizeAliasResult.short
+					return normalizeAliasResult
 				}
 			}
 		}
@@ -144,6 +166,7 @@ export class ShortenService {
 
 	public async shorten(
 		url: string,
+		userId: number | null,
 		domain?: string,
 		storeAuth?: boolean,
 		alias?: string
@@ -151,42 +174,51 @@ export class ShortenService {
 		const problems: ShortenProblem[] = []
 
 		const urlResult = this.normalizeUrl(url, storeAuth)
+		let success: StoreAliasSuccess | null = null
 
 		if (urlResult.result !== 'success') {
 			problems.push(urlResult)
-		}
 
-		let short: string | null = null
-
-		if (alias) {
-			// I miss the Result monad and pattern matching
-			const aliasResult =
-				urlResult.result === 'success'
-					? await this.tryStoreAlias(
-							alias,
-							domain ?? this.hostname,
-							urlResult.normalizedUrl,
-							true
-					  )
-					: await this.tryStoreAlias(alias, domain ?? this.hostname, false)
-
-			if (aliasResult.result !== 'success') {
-				problems.push(aliasResult)
-			} else {
-				;({ short } = aliasResult)
+			if (alias) {
+				const aliasResult = await this.tryStoreAlias({
+					alias,
+					domain: domain ?? this.hostname,
+					store: false
+				})
+				if (aliasResult.result !== 'success') {
+					problems.push(aliasResult)
+				}
 			}
-		} else if (urlResult.result === 'success') {
-			short = await this.generateAndStoreShortUrl(
-				urlResult.normalizedUrl,
-				domain ?? this.hostname
-			)
+		} else {
+			if (alias) {
+				const aliasResult = await this.tryStoreAlias({
+					alias,
+					domain: domain ?? this.hostname,
+					original: urlResult.normalizedUrl,
+					userId,
+					store: true
+				})
+				if (aliasResult.result === 'success') {
+					success = aliasResult
+				} else {
+					problems.push(aliasResult)
+				}
+			} else {
+				success = await this.generateAndStoreShortUrl(
+					urlResult.normalizedUrl,
+					domain ?? this.hostname,
+					userId
+				)
+			}
 		}
 
-		if (urlResult.result === 'success' && short) {
+		if (success) {
+			const { short, original, id } = success
 			return {
 				success: true,
-				original: urlResult.normalizedUrl,
-				short
+				short,
+				original,
+				id
 			}
 		} else {
 			return {

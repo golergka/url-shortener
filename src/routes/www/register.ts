@@ -13,7 +13,14 @@ export = (userService: UserService) => {
 			const {
 				body: { username, password }
 			} = req
-			const result = await userService.register(username, password)
+
+			let urlIds: number[] = []
+			if (req.session && req.session.links) {
+				urlIds = req.session.links.map(({ id }) => id)
+				req.session.links = []
+			}
+
+			const result = await userService.register(username, password, urlIds)
 			if (result.success) {
 				req.login(result.user, () => {
 					res.redirect('/')
