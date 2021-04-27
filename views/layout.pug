@@ -5,7 +5,23 @@ html
     link(rel='stylesheet', href='/static/bulma.min.css')
     meta(name='viewport', content='width=device-width, initial-scale=1')
   body
-    div(class='content container section is-flex')
+    nav(class='navbar is-light', role='navigation', aria-label='main-navigation')
+      div(class='navbar-start')
+        div(class='navbar-item is-size-3') Link shortener
+      div(class='navbar-end')
+        if user
+          div(class='navbar-item')
+            strong=user.username
+          div(class='navbar-item')
+            div(class='buttons')
+              form(action='/logout', method='POST')
+                input(type='submit', value='Logout', class='button is-light')
+        else
+          div(class='navbar-item')
+            div(class='buttons')
+              a(href='register', class='button is-primary') Register
+              a(href='login', class='button is-light') Login
+    div(class='container section is-flex')
       div(class='card')
-        div(class='card-content')
+        div(class='card-content content')
           block content

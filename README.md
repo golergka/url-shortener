@@ -25,6 +25,7 @@ This is a toy url shortener — a web application that creates short URL's from 
 * [ ] Gradefully handle disconnect from Postgresql or Redis at runtime
 * [ ] Health checks
 * [ ] Tighter validation
+* [ ] Move tests to use [integresql](https://github.com/allaboutapps/integresql) instead of transactions
 * [ ] Error reporting (Sentry)
 * [x] Containerize (Docker)
 * [ ] REST API documentation (Swagger?)
@@ -41,8 +42,14 @@ This is a toy url shortener — a web application that creates short URL's from 
 * [x] Custom short URL
 * [x] Multiple domains
 * [ ] QR Code generation
-* [ ] User login/registration - separate service and db?
-* [ ] Editing links (for logged in users) - Kafka for cache layer update
+* [x] User login/registration
+  * [ ] Move user logic to a separate service and db, test graceful degradation
+  * [ ] Save user's links
+  * [ ] Save anonymous user's links and propmpt to register
+  * [ ] Save link favicons - both `ico` and `svg`
+    * [ ] Use S3 storage for favicons
+  * [ ] Editing links (for logged in users)
+    * [ ] Use Kafka to queue updates to Redis
 * [ ] Analytics (Kafka + Clickhouse)
 
 ## Running the project
@@ -109,6 +116,9 @@ NODE_ENV=production
 
 # Redis connection URL
 REDIS_URL=redis://127.0.0.1:6379
+
+# Secret to encode session information with
+SESSION_SECRET=some-secret
 ```
 
 ## Libraries used
@@ -153,6 +163,11 @@ This is my boilerplate. There are many like it, but this one is mine.
 * **normalize-url** - helps handling client-provided URLs that may be incomplete
 * **pug** - templating engine
 * **Bulma** — very simple CSS framework so my web pages look just a little bit more sofisticated than c2.com
+* **express-session** — manages user session information and cookies
+* **connect-redis** — saves user session information to redis
+* **bcrypt** — securely hashes user passwords
+* **passport** — manages user's authentication
+* **passport-local** — provides authentication strategy with username and password
 
 ## Architecture
 
@@ -160,4 +175,10 @@ Project is split into routes, providers and services. Providers are responsible 
 
 As a result, I have `shorten.ts` service, `shorten.ts` api route and `shorten.ts` www route. To be honest, it looks quite silly. I should probably medidate on how build this kind of architecture in less of an architecture-astronaut type of way.
 
+### Dependency injection
+
 Since I want app to be integration tested with cancelled transactions, I want to inject database client instance into all routes. But since there aren't many routes and dependencies, I decided not to use any DI frameworks and just use simple class constructors instead.
+
+### Transactions
+
+Usually, when I write web services, I put every request in a single transaction. But in this case, there's going to be a lot of read-only requests, and the logic that will be pretty simple, without many cases of complex logic that needs ACID, so it seems excessive.

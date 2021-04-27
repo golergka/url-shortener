@@ -22,6 +22,9 @@ export type ShortenResult =
 	| { success: true; short: string; original: string }
 	| { success: false; problems: ShortenProblem[] }
 
+// Alias can contain only lower case letters and digits, and be up to 20 characters
+const aliasRegex = /^[a-z0-9\-_]{1,20}$/m
+
 export class ShortenService {
 	private readonly reservedURLs: string[]
 
@@ -86,9 +89,7 @@ export class ShortenService {
 		domain: string,
 		normalizedUrl: string | false
 	): Promise<CheckStoreAliasResult> {
-		// Alias can contain only lower case letters and digits, and be up to 20 characters
-		const aliasRegex = /^[a-z0-9-_]{1,20}$/gm
-		if (!aliasRegex.test(alias)) {
+		if (!alias || !aliasRegex.test(alias)) {
 			return { result: 'invalid_alias', input: 'alias' }
 		}
 

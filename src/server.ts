@@ -8,7 +8,8 @@ const {
 	PORT: port,
 	HOSTNAME: hostname,
 	NODE_ENV: nodeEnv = 'development',
-	REDIS_URL: redisUrl
+	REDIS_URL: redisUrl,
+	SESSION_SECRET: sessionSecret
 } = process.env
 
 if (!port) {
@@ -23,8 +24,11 @@ if (!hostname) {
 	const debug = nodeEnv === 'development'
 
 	console.log(`⏰ Starting up...`)
-	console.log(`➡️  Environment: ${debug ? `Debug` : `Production`}`)
-	console.log(`➡️  Redis: ${redisUrl ? `on` : `off`}`)
+	console.log(`➡️  Environment    ${debug ? `🚫 debug` : `✅ production`}`)
+	console.log(`➡️  Redis          ${redisUrl ? `✅ on` : `🚫 off`}`)
+	console.log(
+		`➡️  Session secret ${redisUrl ? `✅ provded` : `🚫 not provided`}`
+	)
 
 	// We use standard environment varilables
 	// https://www.postgresql.org/docs/9.1/libpq-envars.html
@@ -37,7 +41,8 @@ if (!hostname) {
 		db,
 		hostname,
 		debug,
-		redis
+		redis,
+		sessionSecret
 	})
 	app.listen(port, () => {
 		console.log(`🚀 App launched and listening on ${hostname}`)

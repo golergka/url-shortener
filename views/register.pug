@@ -1,0 +1,44 @@
+extends layout
+
+block content
+  - const usernameProblem = problems && problems.some(p => p.input === 'username')
+  - const passwordProblem = problems && problems.some(p => p.input === 'password')
+  - const userExists = problems && problems.some(p => p.result === 'user_exists')
+  - const invalidPassword = problems && problems.some(p => p.result === 'invalid_password')
+  - const invalidUsername = problems && problems.some(p => p.result === 'invalid_username')
+  form(action='/register', method='POST')
+    div(class='field')
+      label(class='label', for='username-input')
+        | Username
+      div(class='control')
+        input(
+          class=usernameProblem ? 'input is-danger' : 'input'
+          id='username-input',
+          type='text',
+          name='username',
+          required=true,
+          placeholder='username',
+          value=username
+        )
+        if invalidUsername
+          p(class='help is-danger') username should consist of 3-20 letters, digits, or - and _
+        if userExists
+          p(class='help is-danger') this username is already taken
+    div(class='field')
+      label(class='label', for='password-input')
+        | Password
+      div(class='control')
+        input(
+          class=passwordProblem ? 'input is-danger' : 'input'
+          id='password-input',
+          type='password',
+          name='password',
+          required=true,
+          placeholder='password',
+          value=password
+        )
+        if invalidPassword
+          p(class='help is-danger') password should consist of 8-32 letters, digits, or - and _
+    div(class='field')
+      div(class='control')
+        input(type='submit', value='Register', class='button is-primary')

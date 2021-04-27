@@ -8,6 +8,10 @@ import Redis from 'ioredis'
 import redirectRouter from './routes/redirect'
 import apiRouter from './routes/api'
 import wwwRouter from './routes/www'
+import { UserProvider } from './providers/user'
+import { UserService } from './services/user'
+import connectRedis from 'connect-redis'
+import session from 'express-session'
 
 export interface AppParameters {
 	db: Pool | PoolClient
@@ -15,6 +19,7 @@ export interface AppParameters {
 	hashFunction?: HashFunction
 	debug?: boolean
 	redis?: Redis.Redis
+	sessionSecret?: string
 }
 
 export async function makeApp(
@@ -25,7 +30,8 @@ export async function makeApp(
 		hostname,
 		db,
 		redis,
-		debug
+		debug,
+		sessionSecret
 	} = params
 
 	await migrate({ client: db }, 'migrations')
@@ -33,12 +39,15 @@ export async function makeApp(
 	// When there's over 10 providers and services, bring in DI framework
 
 	const urlProvider = new UrlProvider(db, redis)
+	const userProvider = new UserProvider(db, redis)
+
 	const shortenService = new ShortenService(
 		urlProvider,
 		hashFunction,
 		hostname,
 		['/api', '/static', '/shorten', '/health', '/error']
 	)
+	const userService = new UserService(userProvider)
 
 	const domains = await urlProvider.getDomains()
 	if (domains.indexOf(hostname) === -1) {
@@ -49,13 +58,28 @@ export async function makeApp(
 		)
 	}
 
+	let sessionStore: session.Store | undefined = undefined
+	if (redis) {
+		const RedisStore = connectRedis(session)
+		sessionStore = new RedisStore({ client: redis })
+	}
+
 	const app: express.Application = express()
 
 	app.use('/static', express.static('public'))
 	app.set('view engine', 'pug')
 
 	app.use('/', redirectRouter(urlProvider, hostname))
-	app.use('/', wwwRouter(shortenService, domains))
+	app.use(
+		'/',
+		wwwRouter({
+			shortenService,
+			domains,
+			sessionSecret,
+			userService,
+			sessionStore
+		})
+	)
 	app.use('/api/v1', apiRouter(shortenService))
 
 	if (debug) {

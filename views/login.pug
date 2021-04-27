@@ -1,0 +1,39 @@
+extends layout
+
+block content
+  - const invalidUsername = message === 'invalid_username'
+  - const invalidPassword = message === 'invalid_password'
+  form(action='/login', method='POST')
+    div(class='field')
+      label(class='label', for='username-input')
+        | Username
+      div(class='control')
+        input(
+          class=invalidUsername ? 'input is-danger' : 'input'
+          id='username-input',
+          type='text',
+          name='username',
+          required=true,
+          placeholder='username',
+          value=username
+        )
+        if invalidUsername
+          p(class='help is-danger') username not found
+    div(class='field')
+      label(class='label', for='password-input')
+        | Password
+      div(class='control')
+        input(
+          class=invalidPassport ? 'input is-danger' : 'input'
+          id='password-input',
+          type='password',
+          name='password',
+          required=true,
+          placeholder='password',
+          value=password
+        )
+        if invalidPassword
+          p(class='help is-danger') incorrect password
+    div(class='field')
+      div(class='control')
+        input(type='submit', value='Login', class='button is-primary')
