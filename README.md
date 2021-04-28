@@ -151,6 +151,8 @@ This is my boilerplate. There are many like it, but this one is mine.
 
 ### URL
 
+Retrieves an original URL by it's short variant.
+
 * Url: `api/v1/url`
 * Method: GET
 * Parameters (query):
