@@ -1,7 +1,7 @@
 import express, { Router } from 'express'
-import { ShortenService } from '../../services/shorten'
+import { UrlService } from '../../services/url'
 
-export = (shortenService: ShortenService, domains: string[]): Router => {
+export = (urlService: UrlService, domains: string[]): Router => {
 	const router = Router()
 
 	router.use(express.urlencoded({ extended: true }))
@@ -15,7 +15,7 @@ export = (shortenService: ShortenService, domains: string[]): Router => {
 			const {
 				body: { url, storeAuth, alias, domain }
 			} = req
-			const shortenResult = await shortenService.shorten(
+			const shortenResult = await urlService.shorten(
 				url,
 				domain,
 				storeAuth,

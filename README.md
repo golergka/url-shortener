@@ -27,7 +27,7 @@ This is a toy url shortener — a web application that creates short URL's from 
 * [ ] Tighter validation
 * [ ] Error reporting (Sentry)
 * [x] Containerize (Docker)
-* [ ] REST API documentation (Swagger?)
+* [x] REST API documentation
 * [ ] Automatic horizontal scaling (Kubernetes or just AWS EBS?)
 * [ ] Monitoring (Prometeus + Grafana?)
 * [ ] Write diagnostic logs
@@ -47,30 +47,23 @@ This is a toy url shortener — a web application that creates short URL's from 
 
 ## Running the project
 
-### Natively
+### Locally
 
 To start the project:
 
 1. Make sure you have local Node and NPM. This project uses Node 14
 2. Launch Postgresql database
 3. *(optional)* Launch Redis
-4. Provide Postgresql connection details and other parameters in environment variables (see below)
-5. Run `npm i`, `npm build` and `npm start`
-6. Now the HTTP server is up and running on host and port you specified
+4. Provide Postgresql connection details and other parameters in environment variables or .env file (see below)
+5. Run command `npm install && npm build && npm start`
 
 ### With docker
 
-Build the docker image:
-
-```Bash
-docker build -t url-shortener .
-```
-
-And run it:
-
-```Bash
-docker run --env-file .env -dp 80:80 --network bridge url-shortener
-```
+1. Launch Postgresql database
+2. *(optional)* Launch redis
+3. Build the docker image: `docker build -t url-shortener .`
+4. Provide Postgresql connection details and other parameters in environment variables or .env file (see below)
+5. Run docker image: `docker run --env-file .env -dp 80:80 --network bridge url-shortener`
 
 Please, be vary that if you run Postgresql and Redis from docker as well, they're exposed as 127.0.0.1 to your machine, but to other docker VMs on the same network (typically, `bridge`), they can have different IP addresses. Use [this resource](https://maximorlov.com/4-reasons-why-your-docker-containers-cant-talk-to-each-other/) to debug these network connectivity issues.
 
@@ -153,6 +146,57 @@ This is my boilerplate. There are many like it, but this one is mine.
 * **normalize-url** - helps handling client-provided URLs that may be incomplete
 * **pug** - templating engine
 * **Bulma** — very simple CSS framework so my web pages look just a little bit more sofisticated than c2.com
+
+## Exposed API
+
+### URL
+
+* Url: `api/v1/url`
+* Method: GET
+* Parameters (query):
+  * `shortUrl` — short url (`http://localhost/abcde`)
+  * `domain` — domain (`http://localhost`)
+  * `alias` — alias (`abcde`)
+* Returns (json):
+  * Success (200)
+    * `short` — short url
+    * `original` — origianl url
+  * URL not found (404)
+    * `errrors` - `['alias_not_found']`
+  * Request error (400)
+    * `errors` — one or more errors with provided data
+      * `invalid_parameter_set` — invalid parameters
+      * `invalid_domain`
+      * `invalid_short_url`
+
+When using this api, request should have either `shortUrl`, or `domain` and `alias` parameters.
+
+### Shorten
+
+Shortens a url.
+
+* Url: `api/v1/shorten`
+* Method: POST
+* Parameters (json):
+  * `url` — original url to be encoded
+  * *(optional)* `domain` — which of the available domains to use
+  * *(optional)* `alias` — what alias to use
+* Returns (json):
+  * Success (200)
+    * `short` — short url
+    * `original` — original url
+  * Request error (400)
+    * `errors` — one or more errors with provided data
+
+### Domains
+
+Lists all domains available for the service
+
+* Url: `api/v1/domains`
+* Method: GET
+* Parameters: none
+* Returns (json):
+  * `domains` — list of available domains
 
 ## Architecture
 

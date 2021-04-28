@@ -12,7 +12,7 @@ type NormalizeUrlResult =
 
 type AliasProblem =
 	| { result: 'invalid_alias'; input: 'alias' }
-	| { result: 'alias_unavaiable'; input: 'alias' }
+	| { result: 'alias_unavailable'; input: 'alias' }
 
 type CheckStoreAliasResult = { result: 'success'; short: string } | AliasProblem
 
@@ -20,9 +20,15 @@ type ShortenProblem = UrlProblem | AliasProblem
 
 export type ShortenResult =
 	| { success: true; short: string; original: string }
-	| { success: false; problems: ShortenProblem[] }
+	| { success: false; errors: ShortenProblem[] }
 
-export class ShortenService {
+export type GetResult =
+	| { result: 'success'; short: string; original: string }
+	| { result: 'alias_not_found' }
+	| { result: 'invalid_domain' }
+	| { result: 'invalid_short_url' }
+
+export class UrlService {
 	private readonly reservedURLs: string[]
 
 	constructor(
@@ -49,24 +55,30 @@ export class ShortenService {
 				stripAuthentication: false, // We will handle it later
 				...normalizeOptions
 			})
-
-			const parsedUrl = new URL(normalizedUrl)
-			if (!storeAuth && (parsedUrl.username || parsedUrl.password)) {
-				const fixedUrl = normalizeUrl(url, {
-					stripAuthentication: true,
-					...normalizeOptions
-				})
-				return { result: 'auth_leaked', fixedUrl, input: 'url' }
-			}
-
-			if (parsedUrl.hostname.split('.').length < 2) {
-				return { result: 'invalid_url', input: 'url' }
-			}
-
-			return { result: 'success', normalizedUrl }
 		} catch (_) {
 			return { result: 'invalid_url', input: 'url' }
 		}
+
+		let parsedUrl: URL
+		try {
+			parsedUrl = new URL(normalizedUrl)
+		} catch (_) {
+			return { result: 'invalid_url', input: 'url' }
+		}
+
+		if (!storeAuth && (parsedUrl.username || parsedUrl.password)) {
+			const fixedUrl = normalizeUrl(url, {
+				stripAuthentication: true,
+				...normalizeOptions
+			})
+			return { result: 'auth_leaked', fixedUrl, input: 'url' }
+		}
+
+		if (parsedUrl.hostname.split('.').length < 2) {
+			return { result: 'invalid_url', input: 'url' }
+		}
+
+		return { result: 'success', normalizedUrl }
 	}
 
 	/** Checks alias for correctnes and attempts to store it, or just checks */
@@ -109,7 +121,7 @@ export class ShortenService {
 
 		return storeResult
 			? { result: 'success', short: shortUrl }
-			: { result: 'alias_unavaiable', input: 'alias' }
+			: { result: 'alias_unavailable', input: 'alias' }
 	}
 
 	private async generateAndStoreShortUrl(
@@ -147,12 +159,12 @@ export class ShortenService {
 		storeAuth?: boolean,
 		alias?: string
 	): Promise<ShortenResult> {
-		const problems: ShortenProblem[] = []
+		const errors: ShortenProblem[] = []
 
 		const urlResult = this.normalizeUrl(url, storeAuth)
 
 		if (urlResult.result !== 'success') {
-			problems.push(urlResult)
+			errors.push(urlResult)
 		}
 
 		let short: string | null = null
@@ -170,7 +182,7 @@ export class ShortenService {
 					: await this.tryStoreAlias(alias, domain ?? this.hostname, false)
 
 			if (aliasResult.result !== 'success') {
-				problems.push(aliasResult)
+				errors.push(aliasResult)
 			} else {
 				;({ short } = aliasResult)
 			}
@@ -190,8 +202,38 @@ export class ShortenService {
 		} else {
 			return {
 				success: false,
-				problems
+				errors
 			}
+		}
+	}
+
+	public async get(alias: string, domain: string): Promise<GetResult>
+	public async get(shortUrl: string): Promise<GetResult>
+	public async get(param1: string, domain?: string): Promise<GetResult> {
+		if (domain) {
+			const alias = param1
+			const result = await this.urlProvider.getOriginalUrl(alias, domain)
+			switch (result.result) {
+				case 'success':
+					return {
+						result: 'success',
+						original: result.original,
+						short: `${domain}/${alias}`
+					}
+				default:
+					return result
+			}
+		} else {
+			const shortUrl = param1
+			let parsedShortUrl
+			try {
+				parsedShortUrl = new URL(shortUrl)
+			} catch (_) {
+				return { result: 'invalid_short_url' }
+			}
+			const { origin: domain, pathname } = parsedShortUrl
+			const alias = pathname.slice(1)
+			return this.get(alias, domain)
 		}
 	}
 }

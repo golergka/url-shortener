@@ -1,20 +1,15 @@
 import { Router } from 'express'
-import { ShortenService } from '../../services/shorten'
+import { UrlService } from '../../services/url'
 
-export = (shortenService: ShortenService): Router => {
+export = (urlService: UrlService): Router => {
 	const router = Router()
 
 	router.post('/', async (req, res, next) => {
 		try {
 			const {
-				body: { url, storeAuth, alias, domain }
+				body: { url, alias, domain }
 			} = req
-			const shortenResult = await shortenService.shorten(
-				url,
-				domain,
-				storeAuth,
-				alias
-			)
+			const shortenResult = await urlService.shorten(url, domain, true, alias)
 			res.status(shortenResult.success ? 200 : 400).send(shortenResult)
 		} catch (e) {
 			// Throwing erros is not supported until Express 5?...

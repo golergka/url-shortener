@@ -7,6 +7,16 @@ import {
 	getDomains
 } from './url.queries'
 
+type GetOriginalUrlResult =
+	| { result: 'success'; original: string }
+	| { result: 'invalid_domain' }
+	| { result: 'alias_not_found' }
+
+type StoreUrlReuslt =
+	| { result: 'success' }
+	| { result: 'invalid_domain' }
+	| { result: 'alias_occupied' }
+
 export class UrlProvider {
 	constructor(
 		private readonly db: Pool | PoolClient,
@@ -26,7 +36,7 @@ export class UrlProvider {
 		return domains.map(({ domain }) => domain)
 	}
 
-	private async getDomainId(domain: string): Promise<number> {
+	private async getDomainId(domain: string): Promise<number | null> {
 		// There most likely will be less than 100 domains overall, so it makes
 		// sense to cache the IDs
 		const cachedId = this.domainCache[domain]
@@ -36,7 +46,7 @@ export class UrlProvider {
 
 		const [result] = await getDomainId.run({ domain }, this.db)
 		if (!result) {
-			throw new Error(`domain ${domain} not found`)
+			return null
 		}
 
 		const { id } = result
@@ -47,13 +57,16 @@ export class UrlProvider {
 	public async getOriginalUrl(
 		short: string,
 		domain: string
-	): Promise<string | null> {
+	): Promise<GetOriginalUrlResult> {
 		const domainID = await this.getDomainId(domain)
+		if (!domainID) {
+			return { result: 'invalid_domain' }
+		}
 
 		if (this.redis) {
 			const url = await this.redis.get(this.makeRedisKey(short, domainID))
 			if (url) {
-				return url
+				return { result: 'success', original: url }
 			}
 		}
 
@@ -64,6 +77,8 @@ export class UrlProvider {
 			await this.redis.set(this.makeRedisKey(short, domainID), url)
 		}
 		return url
+			? { result: 'success', original: url }
+			: { result: 'alias_not_found' }
 	}
 
 	public async isShortAvailable(
@@ -82,13 +97,16 @@ export class UrlProvider {
 		short: string,
 		original: string,
 		domain: string
-	): Promise<boolean> {
+	): Promise<StoreUrlReuslt> {
 		const domainId = await this.getDomainId(domain)
+		if (!domainId) {
+			return { result: 'invalid_domain' }
+		}
 
 		if (this.redis) {
 			const stored = await this.redis.get(this.makeRedisKey(short, domainId))
 			if (stored) {
-				return stored === original
+				return { result: stored === original ? 'success' : 'alias_occupied' }
 			}
 		}
 
@@ -108,6 +126,6 @@ export class UrlProvider {
 		// If it's the same as the one we wanted to store, we're successful.
 		// It could happen even if it was stored there before and we didn't
 		// actually write anything.
-		return stored === original
+		return { result: stored === original ? 'success' : 'alias_occupied' }
 	}
 }

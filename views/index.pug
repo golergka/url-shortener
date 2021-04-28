@@ -1,12 +1,12 @@
 extends layout
 
 block content
-  - const urlProblem = problems && problems.some(p => p.input === 'url')
-  - const aliasProblem = problems && problems.some(p => p.input === 'alias')
-  - const invalidUrl = problems && problems.some(p => p.result === 'invalid_url')
-  - const authLeaked = problems && problems.some(p => p.result === 'auth_leaked')
-  - const invalidAlias = problems && problems.some(p => p.result === 'invalid_alias')
-  - const aliasUnavailable = problems && problems.some(p => p.result === 'alias_unavailable')
+  - const urlProblem = errors && errors.some(p => p.input === 'url')
+  - const aliasProblem = errors && errors.some(p => p.input === 'alias')
+  - const invalidUrl = errors && errors.some(p => p.result === 'invalid_url')
+  - const authLeaked = errors && errors.some(p => p.result === 'auth_leaked')
+  - const invalidAlias = errors && errors.some(p => p.result === 'invalid_alias')
+  - const aliasUnavailable = errors && errors.some(p => p.result === 'alias_unavailable')
   form(action='/', method='POST')
     div(class='field')
       label(class='label', for='url-input')

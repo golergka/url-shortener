@@ -3,7 +3,7 @@ import { Pool, PoolClient } from 'pg'
 import { migrate } from 'postgres-migrations'
 import { defaultHashFunction, HashFunction } from './hash_function'
 import { UrlProvider } from './providers/url'
-import { ShortenService } from './services/shorten'
+import { UrlService } from './services/url'
 import Redis from 'ioredis'
 import redirectRouter from './routes/redirect'
 import apiRouter from './routes/api'
@@ -33,12 +33,13 @@ export async function makeApp(
 	// When there's over 10 providers and services, bring in DI framework
 
 	const urlProvider = new UrlProvider(db, redis)
-	const shortenService = new ShortenService(
-		urlProvider,
-		hashFunction,
-		hostname,
-		['/api', '/static', '/shorten', '/health', '/error']
-	)
+	const urlService = new UrlService(urlProvider, hashFunction, hostname, [
+		'/api',
+		'/static',
+		'/shorten',
+		'/health',
+		'/error'
+	])
 
 	const domains = await urlProvider.getDomains()
 	if (domains.indexOf(hostname) === -1) {
@@ -55,8 +56,8 @@ export async function makeApp(
 	app.set('view engine', 'pug')
 
 	app.use('/', redirectRouter(urlProvider, hostname))
-	app.use('/', wwwRouter(shortenService, domains))
-	app.use('/api/v1', apiRouter(shortenService))
+	app.use('/', wwwRouter(urlService, domains))
+	app.use('/api/v1', apiRouter(urlService, domains))
 
 	if (debug) {
 		app.get('/error', function (_req, _res, next) {

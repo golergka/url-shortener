@@ -4,17 +4,19 @@ import { UrlProvider } from '../providers/url'
 export = (urlProvider: UrlProvider, domain: string): Router => {
 	const router = Router()
 
-	router.get('/:short', async (req, res, next) => {
-		const { short } = req.params
-		if (short === '') {
+	router.get('/:alias', async (req, res, next) => {
+		const { alias } = req.params
+		if (!alias) {
 			next('route')
 			return
 		}
 
-		const url = await urlProvider.getOriginalUrl(short, domain)
-		if (!url) {
+		const getResult = await urlProvider.getOriginalUrl(alias, domain)
+		if (getResult.result !== `success`) {
 			next('route')
 		} else {
+			const { original: url } = getResult
+
 			// Reason for 308 code
 			// https://stackoverflow.com/a/42138726/312725
 

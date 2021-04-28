@@ -75,7 +75,7 @@ describe(`api/v1/shorten route`, () => {
 					.send({ url: 'invalid url' })
 					.expect(400)
 
-				expect(res.body.problems).toEqual([
+				expect(res.body.errors).toEqual([
 					{ result: 'invalid_url', input: 'url' }
 				])
 			})
@@ -90,7 +90,7 @@ describe(`api/v1/shorten route`, () => {
 					.send({ url: 'localhost' })
 					.expect(400)
 
-				expect(res.body.problems).toEqual([
+				expect(res.body.errors).toEqual([
 					{ result: 'invalid_url', input: 'url' }
 				])
 			})
@@ -105,21 +105,6 @@ describe(`api/v1/shorten route`, () => {
 
 			expect(res.body.original).toBe('http://google.com')
 		})
-	)
-
-	it.concurrent(
-		`refuses to store a url with authentication information without storeAuth flag`,
-		() =>
-			appTest(async ({ app }) => {
-				const res = await request(app)
-					.post('/api/v1/shorten')
-					.send({ url: 'http://user:password@domain.com' })
-					.expect(400)
-
-				expect(res.body.problems).toEqual([
-					{ result: 'auth_leaked', input: 'url', fixedUrl: 'http://domain.com' }
-				])
-			})
 	)
 
 	it.concurrent(
